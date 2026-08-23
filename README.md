@@ -1,5 +1,5 @@
-# Proverbs - REST API
+# Proverbs App
 
-A RESTful API built with **Node.js**, **Express**, and **Mongoose/MongoDB** for managing and searching proverbs.
+A simple web app built with **Node.js**, **Express**, and **Mongoose/MongoDB** with Nunjucks templating for managing and searching proverbs.
 
 
