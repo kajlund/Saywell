@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{ title }} - Proverbs Portal</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="container fade-in">
+      <header>
+        <h1><a href="/">Proverbs Portal</a></h1>
+        <nav>
+          <a href="/">Browse</a>
+          {% if user %}
+            <a href="/admin">Admin Portal</a>
+            <a href="/admin/new">New Proverb</a>
+            <span class="nav-user">
+              {% if user.avatar %}
+                <img src="{{ user.avatar }}" alt="{{ user.alias or 'Avatar' }}" />
+              {% endif %}
+              <span class="nav-user-alias">{{ user.alias }}</span>
+            </span>
+            <a href="/logout">Logout</a>
+          {% else %}
+            <a href="/login">Login</a>
+          {% endif %}
+        </nav>
+      </header>
+
+      {% if error %}
+        <div class="alert error">{{ error }}</div>
+      {% endif %}
+
+      {% if success %}
+        <div class="alert success">{{ success }}</div>
+      {% endif %}
+
+      {% block content %}{% endblock %}
+    </main>
+  </body>
+</html>

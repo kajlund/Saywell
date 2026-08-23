@@ -1,0 +1,64 @@
+{% extends "proverbs/layout.njk" %}
+
+{% block content %}
+  <section class="form-container">
+    <h2>{{ title }}</h2>
+    <form method="POST" action="{{ action }}">
+      <input type="hidden" name="userId" value="{{ proverb.userId or user.id }}" />
+
+      <div class="form-grid">
+        <div class="filter-group">
+          <label for="title-input">Title</label>
+          <input id="title-input" name="title" value="{{ proverb.title or '' }}" placeholder="Enter proverb title (e.g. A drop in the ocean)" required />
+        </div>
+
+        <div class="filter-group">
+          <label for="author-input">Author</label>
+          <input id="author-input" name="author" value="{{ proverb.author or '' }}" placeholder="Enter author name" required />
+        </div>
+
+        <div class="filter-group">
+          <label for="content-input">Content</label>
+          <textarea id="content-input" name="content" placeholder="Type the proverb content here..." required>{{ proverb.content or '' }}</textarea>
+        </div>
+
+        <div class="filter-group">
+          <label for="description-input">Description / Context</label>
+          <textarea id="description-input" name="description" placeholder="Add optional explanation, history, or context...">{{ proverb.description or '' }}</textarea>
+        </div>
+
+        <div class="filter-group">
+          <label for="lang-select">Language</label>
+          <select id="lang-select" name="lang">
+            <option value="eng" {% if proverb.lang == 'eng' or (not proverb.lang) %}selected{% endif %}>English (eng)</option>
+            <option value="swe" {% if proverb.lang == 'swe' %}selected{% endif %}>Swedish (swe)</option>
+            <option value="fin" {% if proverb.lang == 'fin' %}selected{% endif %}>Finnish (fin)</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label for="category-input">Category</label>
+          <input id="category-input" name="category" value="{{ proverb.category or '' }}" placeholder="e.g. Wisdom, Life, Courage" required />
+        </div>
+
+        <div class="filter-group">
+          <label for="tags-input">Tags (comma-separated)</label>
+          <input id="tags-input" name="tags" value="{% if proverb.tags and proverb.tags.join %}{{ proverb.tags.join(', ') }}{% else %}{{ proverb.tags or '' }}{% endif %}" placeholder="e.g. sea, water, nature" />
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <a href="/admin" class="btn-ghost">Cancel</a>
+        <button type="submit" class="btn-primary">{{ submitLabel }}</button>
+      </div>
+    </form>
+
+    {% if errors %}
+      <ul class="error-list">
+        {% for key, value in errors %}
+          <li><strong>{{ key | capitalize }}:</strong> {{ value }}</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+  </section>
+{% endblock %}
