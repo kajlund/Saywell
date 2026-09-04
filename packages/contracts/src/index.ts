@@ -12,6 +12,7 @@ const proverbFields = {
   lang: z.enum(['eng', 'swe', 'fin']),
   category: z.string().trim().min(3),
   tags: z.array(z.string().trim().min(1)),
+  favorite: z.boolean(),
 };
 
 export const proverbSchema = z.object({
@@ -19,6 +20,7 @@ export const proverbSchema = z.object({
   description: proverbFields.description.default(''),
   lang: proverbFields.lang.default('eng'),
   tags: proverbFields.tags.default([]),
+  favorite: proverbFields.favorite.default(false),
 });
 
 export const createProverbSchema = proverbSchema;
@@ -36,6 +38,10 @@ export const proverbListQuerySchema = z.object({
   lang: z.string().trim().optional(),
   tag: z.string().trim().optional(),
   q: z.string().trim().optional(),
+  favorite: z
+    .enum(['true', 'false'])
+    .transform((value) => value === 'true')
+    .optional(),
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(10),
   sort: z.string().trim().default('-createdAt'),

@@ -1,5 +1,5 @@
 :root {
-  color-scheme: dark;
+  color-scheme: light;
   font-family:
     Inter,
     system-ui,
@@ -9,15 +9,15 @@
     sans-serif;
   line-height: 1.5;
   font-weight: 400;
-  background: #020817;
-  color: #e2e8f0;
+  background: #f4f0e7;
+  color: #172c25;
 }
 
 html,
 body {
   margin: 0;
   min-height: 100%;
-  background: radial-gradient(circle at top, #111827, #020817 55%);
+  background: #f4f0e7;
 }
 
 * {

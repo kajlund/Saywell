@@ -9,6 +9,7 @@ export interface ProverbDocument {
   lang: 'eng' | 'swe' | 'fin';
   category: string;
   tags: string[];
+  favorite: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -54,6 +55,11 @@ const proverbSchema = new Schema<ProverbDocument>(
     tags: {
       type: [String],
       default: [],
+      index: true,
+    },
+    favorite: {
+      type: Boolean,
+      default: false,
       index: true,
     },
   },

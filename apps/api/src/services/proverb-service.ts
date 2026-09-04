@@ -20,6 +20,7 @@ export class ProverbService {
     if (query.category) filters.category = query.category;
     if (query.lang) filters.lang = query.lang;
     if (query.tag) filters.tags = query.tag;
+    if (query.favorite !== undefined) filters.favorite = query.favorite;
 
     if (query.q && String(query.q).trim()) {
       const search = new RegExp(escapeRegex(String(query.q).trim()), 'i');

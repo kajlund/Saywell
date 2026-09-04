@@ -42,6 +42,16 @@ describe('Proverbs API', () => {
     expect(await response.json()).toMatchObject({ success: true, data: [], meta: { count: 0 } });
   });
 
+  it('passes the favorite filter to the service', async () => {
+    const getProverbs = vi.fn().mockResolvedValue({
+      proverbs: [],
+      pagination: { total: 0, page: 1, pages: 1 },
+    });
+    const response = await app({ getProverbs }).request('/api/proverbs?favorite=true');
+    expect(response.status).toBe(200);
+    expect(getProverbs).toHaveBeenCalledWith(expect.objectContaining({ favorite: true }));
+  });
+
   it('rejects invalid create payloads', async () => {
     const response = await app().request('/api/proverbs', {
       method: 'POST',

@@ -11,7 +11,7 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "npm run dev:preflight && concurrently --kill-others-on-fail -n api,web -c cyan,green \"npm run dev -w @proverbs/api\" \"node scripts/wait-for-api.mjs && npm run dev -w @proverbs/web\"",
+    "dev": "npm run dev:preflight && concurrently --raw --kill-others-on-fail \"npm run dev -w @proverbs/api\" \"npm run dev -w @proverbs/web\"",
     "dev:preflight": "node scripts/dev-preflight.mjs",
     "start": "npm run start -w @proverbs/api",
     "build": "npm run build --workspaces --if-present",

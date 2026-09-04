@@ -15,6 +15,7 @@ describe('proverb contracts', () => {
       description: '',
       lang: 'eng',
       tags: [],
+      favorite: false,
     });
   });
 
@@ -28,5 +29,10 @@ describe('proverb contracts', () => {
       limit: 25,
     });
     expect(proverbListQuerySchema.safeParse({ limit: '101' }).success).toBe(false);
+  });
+
+  it('parses the persisted favorite filter', () => {
+    expect(proverbListQuerySchema.parse({ favorite: 'true' }).favorite).toBe(true);
+    expect(proverbListQuerySchema.parse({ favorite: 'false' }).favorite).toBe(false);
   });
 });

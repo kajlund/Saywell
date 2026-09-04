@@ -1,0 +1,44 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Proverbs: API",
+      "type": "shell",
+      "command": "npm run dev -w @proverbs/api",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "proverbs-dev",
+        "clear": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Proverbs: Web",
+      "type": "shell",
+      "command": "npm run dev -w @proverbs/web",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "proverbs-dev",
+        "clear": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Proverbs: Start development",
+      "dependsOn": ["Proverbs: API", "Proverbs: Web"],
+      "dependsOrder": "parallel",
+      "problemMatcher": [],
+      "runOptions": {
+        "instanceLimit": 1
+      }
+    }
+  ]
+}
