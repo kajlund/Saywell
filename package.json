@@ -1,37 +1,35 @@
 {
   "name": "proverbs",
   "version": "1.0.0",
-  "description": "Proverbs REST API with Node.js, Express, and Mongoose",
-  "main": "src/index.js",
+  "private": true,
   "type": "module",
-  "scripts": {
-    "start": "node src/index.js",
-    "dev": "nodemon src/index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+  "engines": {
+    "node": ">=22"
   },
-  "keywords": [
-    "proverbs",
-    "nodejs",
-    "rest",
-    "api",
-    "express",
-    "mongoose",
-    "mongoDB"
+  "workspaces": [
+    "apps/*",
+    "packages/*"
   ],
-  "author": "LuKa",
-  "license": "ISC",
-  "dependencies": {
-    "@vinejs/vine": "^4.4.0",
-    "cors": "^2.8.6",
-    "dotenv": "^17.4.2",
-    "express": "^5.2.1",
-    "jsonwebtoken": "^9.0.3",
-    "mongoose": "^9.7.3",
-    "nunjucks": "^3.2.4",
-    "pino": "^10.3.1",
-    "pino-pretty": "^13.1.3"
+  "scripts": {
+    "dev": "npm run dev:preflight && concurrently --kill-others-on-fail -n api,web -c cyan,green \"npm run dev -w @proverbs/api\" \"node scripts/wait-for-api.mjs && npm run dev -w @proverbs/web\"",
+    "dev:preflight": "node scripts/dev-preflight.mjs",
+    "start": "npm run start -w @proverbs/api",
+    "build": "npm run build --workspaces --if-present",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm test --workspaces --if-present",
+    "format": "prettier --write \"{apps,packages}/**/*.{ts,css,json,html,md}\" \"scripts/**/*.mjs\" \"*.{json,md,mjs}\"",
+    "format:check": "prettier --check \"{apps,packages}/**/*.{ts,css,json,html,md}\" \"scripts/**/*.mjs\" \"*.{json,md,mjs}\"",
+    "check": "npm run format:check && npm run lint && npm run typecheck && npm test"
   },
   "devDependencies": {
-    "nodemon": "^3.1.14"
+    "@eslint/js": "^10.0.1",
+    "concurrently": "^9.2.1",
+    "eslint": "^10.9.1",
+    "prettier": "^3.6.2",
+    "typescript": "^5.9.2",
+    "typescript-eslint": "^8.69.0",
+    "vitest": "^3.2.4"
   }
 }
