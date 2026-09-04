@@ -14,13 +14,18 @@ Requires Node.js 22+ and access to the configured MongoDB server.
 ```bash
 copy .env.example .env
 npm install
-npm run dev
 ```
-
-The API runs on port 3000 and the web client runs on port 5173 with Vite proxying API calls.
 
 In VS Code, use **Terminal → Run Task → Proverbs: Start development**. This starts the API and
 web client in separate terminal panels so either process can restart without disrupting the other.
+The API runs on port 3000 and the web client runs on port 5173 with Vite proxying API calls.
+
+Outside VS Code, start the processes in two terminals:
+
+```bash
+npm run dev:api
+npm run dev:web
+```
 
 ## Checks and production
 

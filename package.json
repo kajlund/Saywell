@@ -11,8 +11,8 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "npm run dev:preflight && concurrently --raw --kill-others-on-fail \"npm run dev -w @proverbs/api\" \"npm run dev -w @proverbs/web\"",
-    "dev:preflight": "node scripts/dev-preflight.mjs",
+    "dev:api": "npm run dev -w @proverbs/api",
+    "dev:web": "npm run dev -w @proverbs/web",
     "start": "npm run start -w @proverbs/api",
     "build": "npm run build --workspaces --if-present",
     "lint": "eslint .",
@@ -25,7 +25,6 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "concurrently": "^9.2.1",
     "eslint": "^10.9.1",
     "prettier": "^3.6.2",
     "typescript": "^5.9.2",
