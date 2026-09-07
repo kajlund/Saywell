@@ -11,9 +11,5 @@ const schema = z.object({
 export type Env = z.infer<typeof schema>;
 
 export function readEnv(source: NodeJS.ProcessEnv = process.env): Env {
-  const env = schema.parse(source);
-  if (env.NODE_ENV === 'production' && /localhost|127\.0\.0\.1/.test(env.MONGO_URI)) {
-    throw new Error('Production cannot use a local MONGO_URI');
-  }
-  return env;
+  return schema.parse(source);
 }

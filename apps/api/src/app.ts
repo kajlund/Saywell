@@ -66,7 +66,7 @@ export function createApp(
     return parsed.data;
   };
 
-  app.get('/health', (c) => c.json({ status: 'OK', message: 'Proverbs API is running' }));
+  app.get('/health', (c) => c.json({ status: 'OK', message: 'Saywell API is running' }));
 
   app.get(
     '/api/proverbs/search',
