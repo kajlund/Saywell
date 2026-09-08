@@ -5,7 +5,10 @@ import type { CreateProverb, Pagination, UpdateProverb } from '@proverbs/contrac
 
 export class ProverbService {
   async createProverb(input: CreateProverb) {
-    const proverb = await ProverbModel.create(input);
+    const proverb = await ProverbModel.create({
+      ...input,
+      tags: normalizeTags(input.tags),
+    });
     return proverb.toObject();
   }
 
@@ -19,7 +22,12 @@ export class ProverbService {
     if (query.author) filters.author = query.author;
     if (query.category) filters.category = query.category;
     if (query.lang) filters.lang = query.lang;
-    if (query.tag) filters.tags = query.tag;
+    if (query.tag) {
+      const cleanTag = String(query.tag).trim().toLowerCase();
+      filters.tags = {
+        $in: [cleanTag, new RegExp(`(^|[\\s,.;/])${escapeRegex(cleanTag)}([\\s,.;/]|$)`, 'i')],
+      };
+    }
     if (query.favorite !== undefined) filters.favorite = query.favorite;
 
     if (query.q && String(query.q).trim()) {
@@ -117,7 +125,8 @@ export class ProverbService {
 
   async updateProverb(id: string, patch: UpdateProverb) {
     validateObjectId(id);
-    const proverb = await ProverbModel.findByIdAndUpdate(id, patch, {
+    const normalizedPatch = patch.tags ? { ...patch, tags: normalizeTags(patch.tags) } : patch;
+    const proverb = await ProverbModel.findByIdAndUpdate(id, normalizedPatch, {
       new: true,
       runValidators: true,
     }).lean();
@@ -143,9 +152,21 @@ export class ProverbService {
       authors: [...new Set((authors as string[]).filter(Boolean))].sort(),
       categories: [...new Set((categories as string[]).filter(Boolean))].sort(),
       languages: [...new Set((languages as string[]).filter(Boolean))].sort(),
-      tags: [...new Set((tags as string[]).filter(Boolean))].sort(),
+      tags: normalizeTags(tags as string[]),
     };
   }
+}
+
+function normalizeTags(tags?: string[]): string[] {
+  if (!tags) return [];
+  return [
+    ...new Set(
+      tags
+        .flatMap((t) => (t ? String(t).split(/[\s,.;/]+/) : []))
+        .map((t) => t.trim().toLowerCase())
+        .filter((t) => t.length > 0),
+    ),
+  ].sort();
 }
 
 function validateObjectId(id: string): void {

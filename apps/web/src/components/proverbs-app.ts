@@ -2,6 +2,22 @@ import { LitElement, css, html, nothing } from 'lit';
 import type { CreateProverb, FilterOptions, Pagination, Proverb } from '@proverbs/contracts';
 import { api } from '../services/api-client.js';
 
+export const PREDEFINED_THEMES = [
+  'Wisdom',
+  'Kindness',
+  'Courage',
+  'Patience',
+  'Nature',
+  'Friendship',
+  'Humor',
+  'Work',
+  'Love',
+  'Life',
+  'Computers',
+  'Science',
+  'Religion',
+] as const;
+
 type Draft = Pick<
   CreateProverb,
   'title' | 'author' | 'content' | 'description' | 'lang' | 'category'
@@ -12,7 +28,7 @@ const emptyDraft = (): Draft => ({
   content: '',
   description: '',
   lang: 'eng',
-  category: '',
+  category: 'Wisdom',
   tags: '',
 });
 const emptyFilters = (): FilterOptions => ({
@@ -61,6 +77,7 @@ export class ProverbsApp extends LitElement {
   declare showFavorites: boolean;
   declare openMenu: string | null;
   declare detailItem: Proverb | null;
+  private editReturnPage = 1;
 
   constructor() {
     super();
@@ -82,6 +99,7 @@ export class ProverbsApp extends LitElement {
     this.showFavorites = false;
     this.openMenu = null;
     this.detailItem = null;
+    this.editReturnPage = 1;
   }
   connectedCallback() {
     super.connectedCallback();
@@ -111,7 +129,7 @@ export class ProverbsApp extends LitElement {
     this.favoriteTotal = Math.max(0, this.favoriteTotal + (favorite ? 1 : -1));
     try {
       await api.update(item._id, { favorite });
-      if (this.showFavorites && !favorite) await this.load(1);
+      if (this.showFavorites && !favorite) await this.load(this.pagination?.page || 1);
     } catch (error) {
       this.proverbs = this.proverbs.map((value) =>
         value._id === item._id ? { ...value, favorite: !favorite } : value,
@@ -148,6 +166,9 @@ export class ProverbsApp extends LitElement {
     this.error = '';
     try {
       const result = await api.list(this.params(page));
+      if (page > 1 && result.data.length === 0 && result.pagination.total > 0) {
+        return this.load(result.pagination.pages);
+      }
       this.proverbs = result.data;
       this.pagination = result.pagination;
     } catch (error) {
@@ -179,7 +200,13 @@ export class ProverbsApp extends LitElement {
   private field<K extends keyof Draft>(key: K, value: Draft[K]) {
     this.draft = { ...this.draft, [key]: value };
   }
+  private closeForm() {
+    this.editing = false;
+    this.selected = null;
+    this.draft = emptyDraft();
+  }
   private edit(item?: Proverb) {
+    this.editReturnPage = this.pagination?.page || 1;
     this.selected = item ?? null;
     this.error = '';
     this.draft = item
@@ -201,16 +228,22 @@ export class ProverbsApp extends LitElement {
       ...this.draft,
       userId: this.selected?.userId ?? '665544332211009988776655',
       favorite: this.selected?.favorite ?? false,
-      tags: this.draft.tags
-        .split(',')
-        .map((x) => x.trim())
-        .filter(Boolean),
+      tags: Array.from(
+        new Set(
+          this.draft.tags
+            .split(/[\s,.;/]+/)
+            .map((x) => x.trim().toLowerCase())
+            .filter(Boolean),
+        ),
+      ),
     };
     try {
+      const isEditing = Boolean(this.selected?._id);
+      const targetPage = isEditing ? this.editReturnPage : 1;
       if (this.selected?._id) await api.update(this.selected._id, value);
       else await api.create(value);
-      this.editing = false;
-      await Promise.all([this.load(), this.loadFilters(), this.loadRandom()]);
+      this.closeForm();
+      await Promise.all([this.load(targetPage), this.loadFilters(), this.loadRandom()]);
     } catch (error) {
       this.fail(error);
     }
@@ -219,7 +252,8 @@ export class ProverbsApp extends LitElement {
     if (!item._id || !window.confirm(`Delete “${item.title}”?`)) return;
     try {
       await api.delete(item._id);
-      await Promise.all([this.load(), this.loadFilters(), this.loadFavoriteTotal()]);
+      const targetPage = this.pagination?.page || 1;
+      await Promise.all([this.load(targetPage), this.loadFilters(), this.loadFavoriteTotal()]);
     } catch (error) {
       this.fail(error);
     }
@@ -231,6 +265,17 @@ export class ProverbsApp extends LitElement {
     this.lang = '';
     this.tag = '';
     void this.load();
+  }
+
+  private get availableThemes(): string[] {
+    return Array.from(
+      new Set([...PREDEFINED_THEMES, ...this.filterOptions.categories.filter(Boolean)]),
+    ).sort((a, b) => a.localeCompare(b));
+  }
+
+  private setTag(tag: string) {
+    this.tag = this.tag === tag ? '' : tag;
+    void this.load(1);
   }
 
   render() {
@@ -255,7 +300,7 @@ export class ProverbsApp extends LitElement {
             class=${this.showFavorites ? '' : 'selected'}
             @click=${() => this.showView(false)}
           >
-            <i class="ph ph-book-open"></i>Collection</button
+            <i class="ph ph-quotes"></i>All sayings</button
           ><button
             class=${this.showFavorites ? 'selected' : ''}
             @click=${() => this.showView(true)}
@@ -271,7 +316,7 @@ export class ProverbsApp extends LitElement {
         ${this.error ? html`<aside role="alert">${this.error}</aside>` : nothing}
         ${this.editing ? this.form() : this.saywellList()}
       </main>
-      ${this.editing ? nothing : this.themeRail()}
+      ${this.editing ? nothing : this.tagsRail()}
       ${
         this.detailItem
           ? html`<div class="detail-backdrop" @click=${() => (this.detailItem = null)}>
@@ -288,7 +333,9 @@ export class ProverbsApp extends LitElement {
                 >
                   <i class="ph ph-x"></i>
                 </button>
-                <small>${this.detailItem.category} · ${this.detailItem.lang.toUpperCase()}</small>
+                <small
+                  >Theme: ${this.detailItem.category} · ${this.detailItem.lang.toUpperCase()}</small
+                >
                 <blockquote>${this.detailItem.content}</blockquote>
                 <p>— ${this.detailItem.author}</p>
                 ${this.detailItem.description ? html`<div class="detail-description">${this.detailItem.description}</div>` : nothing}
@@ -304,13 +351,13 @@ export class ProverbsApp extends LitElement {
 
   private saywellList() {
     return html`<header class="collection-bar">
-        <h1>${this.showFavorites ? 'Favorites' : 'Collection'}</h1>
-        <span>${this.showFavorites ? 'Saved sayings' : 'All sayings'}</span>
+        <h1>${this.showFavorites ? 'Favorites' : 'All sayings'}</h1>
+        <span>${this.showFavorites ? 'Saved sayings' : 'All sayings in library'}</span>
         <label class="search-field"
           ><i class="ph ph-magnifying-glass"></i
           ><input
             aria-label="Search"
-            placeholder="Search the collection"
+            placeholder="Search all sayings…"
             .value=${this.query}
             @input=${this.setText('query')}
             @keydown=${(event: KeyboardEvent) => event.key === 'Enter' && void this.load()}
@@ -333,11 +380,20 @@ export class ProverbsApp extends LitElement {
           void this.load();
         }}
       >
-        <strong>${this.pagination.total} sayings</strong
-        >${this.select('category', 'All themes', this.filterOptions.categories)}
-        ${this.select('author', 'All authors', this.filterOptions.authors)}<button>
-          <i class="ph ph-sliders-horizontal"></i>Filter
-        </button>
+        <strong>${this.pagination.total} sayings</strong>
+        ${this.select('category', 'All themes', this.availableThemes)}
+        ${this.select('author', 'All authors', this.filterOptions.authors)}
+        ${
+          this.tag
+            ? html`<span class="active-tag-chip" title="Filter active: #${this.tag}">
+                <i class="ph ph-tag"></i>#${this.tag}
+                <button type="button" aria-label="Clear tag filter" @click=${() => this.setTag('')}>
+                  <i class="ph ph-x"></i>
+                </button>
+              </span>`
+            : nothing
+        }
+        <button><i class="ph ph-sliders-horizontal"></i>Filter</button>
         <button type="button" class="secondary" @click=${this.reset}>Reset</button>
       </form>
       ${
@@ -427,48 +483,48 @@ export class ProverbsApp extends LitElement {
       </nav>`;
   }
 
-  private themeRail() {
-    const themes = [
-      'Wisdom',
-      'Kindness',
-      'Courage',
-      'Patience',
-      'Nature',
-      'Friendship',
-      'Humor',
-      'Work',
-      'Love',
-      'Life',
-    ];
-    const counts = [22, 18, 14, 16, 20, 15, 12, 17, 19, 23];
-    const icons = [
-      'ph-lightbulb',
-      'ph-heart',
-      'ph-shield',
-      'ph-hourglass',
-      'ph-tree',
-      'ph-users',
-      'ph-smiley',
-      'ph-briefcase',
-      'ph-heart-straight',
-      'ph-sun',
-    ];
-    return html`<aside class="theme-rail">
-      <h2>THEMES</h2>
-      ${themes.map(
-        (theme, index) =>
-          html` <button
-            @click=${() => {
-              this.category = theme;
-              void this.load();
-            }}
-          >
-            <span><i class=${`ph ${icons[index]}`}></i>${theme}</span
-            ><small>${counts[index]} ›</small>
-          </button>`,
-      )}
-      <div class="theme-card">
-        <strong>Find the right words</strong><span>Browse themes for any moment.</span>
+  private tagsRail() {
+    const rawTags = this.filterOptions.tags;
+    const tags = Array.from(
+      new Set(
+        rawTags
+          .flatMap((t) => (t ? String(t).split(/[\s,.;/]+/) : []))
+          .map((t) => t.trim().toLowerCase())
+          .filter(Boolean),
+      ),
+    ).sort((a, b) => a.localeCompare(b));
+    return html`<aside class="tag-rail">
+      <div class="tag-rail-header">
+        <h2>TAGS</h2>
+        ${
+          this.tag
+            ? html`<button class="clear-tag-btn" @click=${() => this.setTag('')}>Clear</button>`
+            : nothing
+        }
+      </div>
+      ${
+        tags.length
+          ? html`<div class="tag-list">
+              ${tags.map(
+                (t) => html`
+                  <button
+                    class=${this.tag === t ? 'tag-badge active' : 'tag-badge'}
+                    @click=${() => this.setTag(t)}
+                    title=${this.tag === t ? `Clear filter #${t}` : `Filter by #${t}`}
+                  >
+                    <i class="ph ph-tag"></i>
+                    <span>#${t}</span>
+                  </button>
+                `,
+              )}
+            </div>`
+          : html`<p class="tags-empty">
+              No tags found in the library yet. Add tags when creating or editing sayings.
+            </p>`
+      }
+      <div class="tag-card">
+        <strong>Filter by tag</strong
+        ><span>Click any tag to filter sayings across the library.</span>
       </div>
     </aside>`;
   }
@@ -585,11 +641,34 @@ export class ProverbsApp extends LitElement {
   }
   private form() {
     return html`<form class="panel" @submit=${this.save}>
+      <button
+        type="button"
+        class="form-close"
+        aria-label="Close editor"
+        title="Close editor"
+        @click=${() => this.closeForm()}
+      >
+        <i class="ph ph-x"></i>
+      </button>
       <small>EDITOR</small>
       <h1>${this.selected ? 'Edit proverb' : 'Add a proverb'}</h1>
       ${this.input('title', 'Title', true)}${this.input('author', 'Author', true)}${this.area('content', 'Proverb', true)}${this.area('description', 'Description')}
       <div class="form-grid">
-        ${this.input('category', 'Category', true)}<label
+        <label
+          >Theme<select
+            required
+            .value=${this.draft.category}
+            @change=${(e: Event) => this.field('category', (e.target as HTMLSelectElement).value)}
+          >
+            <option value="" disabled ?selected=${!this.draft.category}>Select a theme</option>
+            ${this.availableThemes.map(
+              (theme) =>
+                html`<option value=${theme} ?selected=${this.draft.category === theme}>
+                  ${theme}
+                </option>`,
+            )}
+          </select></label
+        ><label
           >Language<select
             .value=${this.draft.lang}
             @change=${(e: Event) => this.field('lang', (e.target as HTMLSelectElement).value as Draft['lang'])}
@@ -602,7 +681,7 @@ export class ProverbsApp extends LitElement {
       </div>
       ${this.input('tags', 'Tags (comma-separated)')}
       <footer>
-        <button type="button" class="secondary" @click=${() => (this.editing = false)}>
+        <button type="button" class="secondary" @click=${() => this.closeForm()}>
           Cancel</button
         ><button>Save proverb</button>
       </footer>
@@ -649,6 +728,9 @@ export class ProverbsApp extends LitElement {
     .ph-fill {
       font-family: 'Phosphor-Fill' !important;
     }
+    .ph-atom::before {
+      content: '\\e5e4';
+    }
     .ph-book-open::before {
       content: '\\e0e6';
     }
@@ -658,11 +740,17 @@ export class ProverbsApp extends LitElement {
     .ph-copy::before {
       content: '\\e1ca';
     }
+    .ph-desktop::before {
+      content: '\\e560';
+    }
     .ph-dots-three::before {
       content: '\\e1fe';
     }
     .ph-eye::before {
       content: '\\e220';
+    }
+    .ph-hands-praying::before {
+      content: '\\ecc8';
     }
     .ph-heart::before {
       content: '\\e2a8';
@@ -688,6 +776,9 @@ export class ProverbsApp extends LitElement {
     .ph-plus-circle::before {
       content: '\\e3d6';
     }
+    .ph-quotes::before {
+      content: '\\e660';
+    }
     .ph-shield::before {
       content: '\\e40a';
     }
@@ -699,6 +790,9 @@ export class ProverbsApp extends LitElement {
     }
     .ph-sun::before {
       content: '\\e472';
+    }
+    .ph-tag::before {
+      content: '\\e478';
     }
     .ph-trash::before {
       content: '\\e4a6';
@@ -779,6 +873,7 @@ export class ProverbsApp extends LitElement {
     }
     .grid article,
     .panel {
+      position: relative;
       background: #111c31;
       border: 1px solid #334155;
       border-radius: 14px;
@@ -1388,74 +1483,166 @@ export class ProverbsApp extends LitElement {
     .page-nav button {
       padding: 8px 12px;
     }
-    .theme-rail {
+    .tag-rail {
       height: 100vh;
       height: 100dvh;
-      padding: 112px 30px 34px;
+      padding: 112px 24px 34px;
       overflow-y: auto;
       border-left: 1px solid #d9dcd7;
       background: #faf9f5;
     }
-    .theme-rail h2 {
-      margin: 0 0 24px;
+    .tag-rail-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 0 0 20px;
       padding-bottom: 14px;
       border-bottom: 1px solid #d8dad5;
+    }
+    .tag-rail-header h2 {
+      margin: 0;
       color: #405b51;
       font:
         700 0.75rem Arial,
         sans-serif;
       letter-spacing: 0.08em;
     }
-    .theme-rail > button {
-      display: flex;
-      justify-content: space-between;
-      width: 100%;
-      padding: 11px 4px;
-      color: #3c4c47;
+    .clear-tag-btn {
+      padding: 3px 8px;
+      font-size: 0.7rem;
+      color: #8c453e;
       background: transparent;
-      font-weight: 400;
+      border: 1px solid #e0d8d6;
+      border-radius: 4px;
+      cursor: pointer;
     }
-    .theme-rail > button:hover {
-      color: #1c4d3d;
-      background: #edf0eb;
+    .clear-tag-btn:hover {
+      background: #faebe9;
+      border-color: #8c453e;
     }
-    .theme-rail > button small {
-      color: #8a9590;
-      letter-spacing: 0;
-    }
-    .theme-rail > button span {
+    .tag-list {
       display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .tag-badge {
+      display: inline-flex;
       align-items: center;
-      gap: 11px;
+      gap: 6px;
+      padding: 6px 11px;
+      background: #f0eee7;
+      color: #3f554c;
+      border: 1px solid #deddd6;
+      border-radius: 6px;
+      font-size: 0.76rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      text-align: left;
     }
-    .theme-rail > button i {
-      width: 20px;
-      color: #536960;
-      font-size: 1.15rem;
+    .tag-badge:hover {
+      background: #e4e7e1;
+      color: #17382f;
+      border-color: #bcc6be;
     }
-    .theme-card {
+    .tag-badge i {
+      font-size: 0.85rem;
+      color: #63776e;
+    }
+    .tag-badge.active {
+      background: #17382f;
+      color: #fffdf8;
+      border-color: #17382f;
+    }
+    .tag-badge.active i {
+      color: #a7d0c0;
+    }
+    .tags-empty {
+      color: #798681;
+      font-size: 0.8rem;
+      line-height: 1.5;
+      margin: 0 0 20px;
+    }
+    .tag-card {
       display: grid;
       gap: 7px;
       margin-top: 28px;
-      padding: 22px;
+      padding: 20px;
       background: #f0eee7;
       border: 1px solid #deddd6;
       border-radius: 7px;
     }
-    .theme-card strong {
+    .tag-card strong {
       color: #29483e;
       font:
         400 0.92rem Georgia,
         serif;
     }
-    .theme-card span {
+    .tag-card span {
       color: #69746f;
       font-size: 0.72rem;
       line-height: 1.5;
     }
+    .active-tag-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 8px;
+      background: #17382f;
+      color: #fffdf8;
+      border-radius: 4px;
+      font-size: 0.74rem;
+      font-weight: 500;
+    }
+    .active-tag-chip i {
+      font-size: 0.8rem;
+    }
+    .active-tag-chip button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1px;
+      margin-left: 2px;
+      background: transparent;
+      border: 0;
+      color: #c7ded5;
+      cursor: pointer;
+      font-size: 0.75rem;
+    }
+    .active-tag-chip button:hover {
+      color: #fff;
+    }
     .reading-room .panel {
+      position: relative;
       max-width: 760px;
       margin: 40px auto;
+    }
+    .form-close {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      padding: 8px;
+      color: #94a3b8;
+      background: transparent;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 1.25rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: color 0.15s, background-color 0.15s;
+    }
+    .form-close:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.08);
+    }
+    .reading-room .form-close {
+      color: #52645e;
+    }
+    .reading-room .form-close:hover {
+      color: #253a32;
+      background: rgba(37, 58, 50, 0.08);
     }
     .detail-backdrop {
       position: fixed;
@@ -1517,7 +1704,7 @@ export class ProverbsApp extends LitElement {
       .app-shell {
         grid-template-columns: 210px minmax(0, 1fr);
       }
-      .theme-rail {
+      .tag-rail {
         display: none;
       }
     }
