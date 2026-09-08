@@ -72,4 +72,62 @@ describe('ProverbsApp pagination preservation', () => {
     expect(element.selected).toBeNull();
     expect(element.pagination.page).toBe(3);
   });
+
+  it('clears other filters when search input is used', () => {
+    element.category = 'Wisdom';
+    element.author = 'Seneca';
+    element.tag = 'stoic';
+    element.lang = 'eng';
+
+    const inputEvent = { target: { value: 'patience' } } as unknown as Event;
+    (element as any).handleSearchInput(inputEvent);
+
+    expect(element.query).toBe('patience');
+    expect(element.category).toBe('');
+    expect(element.author).toBe('');
+    expect(element.tag).toBe('');
+    expect(element.lang).toBe('');
+  });
+
+  it('clears all filters and resets list to view all when clearSearch is called', async () => {
+    element.query = 'patience';
+    element.category = 'Wisdom';
+    element.author = 'Seneca';
+    element.tag = 'stoic';
+    element.lang = 'eng';
+    element.showFavorites = true;
+
+    await (element as any).clearSearch();
+
+    expect(element.query).toBe('');
+    expect(element.category).toBe('');
+    expect(element.author).toBe('');
+    expect(element.tag).toBe('');
+    expect(element.lang).toBe('');
+    expect(element.showFavorites).toBe(false);
+
+    const lastCallParams = vi.mocked(api.list).mock.calls.at(-1)?.[0];
+    expect(lastCallParams?.get('page')).toBe('1');
+    expect(lastCallParams?.get('q')).toBeNull();
+    expect(lastCallParams?.get('favorite')).toBeNull();
+  });
+
+  it('clears search on Escape key and searches on Enter key', async () => {
+    element.query = 'truth';
+    element.category = 'Nature';
+
+    // Enter key
+    const enterEvent = { key: 'Enter', preventDefault: vi.fn() } as unknown as KeyboardEvent;
+    (element as any).handleSearchKeydown(enterEvent);
+
+    expect(element.category).toBe('');
+    const lastCallParams = vi.mocked(api.list).mock.calls.at(-1)?.[0];
+    expect(lastCallParams?.get('q')).toBe('truth');
+    expect(lastCallParams?.get('page')).toBe('1');
+
+    // Escape key
+    const escEvent = { key: 'Escape', preventDefault: vi.fn() } as unknown as KeyboardEvent;
+    (element as any).handleSearchKeydown(escEvent);
+    expect(element.query).toBe('');
+  });
 });

@@ -258,13 +258,51 @@ export class ProverbsApp extends LitElement {
       this.fail(error);
     }
   }
+  private handleSearchInput(event: Event) {
+    const value = (event.target as HTMLInputElement).value;
+    this.query = value;
+    if (value.trim()) {
+      this.author = '';
+      this.category = '';
+      this.lang = '';
+      this.tag = '';
+    }
+  }
+
+  private handleSearchKeydown(event: KeyboardEvent) {
+    if (event.key === 'Escape') {
+      this.clearSearch();
+      return;
+    }
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      if (this.query.trim()) {
+        this.author = '';
+        this.category = '';
+        this.lang = '';
+        this.tag = '';
+      }
+      void this.load(1);
+    }
+  }
+
+  private clearSearch() {
+    this.query = '';
+    this.author = '';
+    this.category = '';
+    this.lang = '';
+    this.tag = '';
+    this.showFavorites = false;
+    void this.load(1);
+  }
+
   private reset() {
     this.query = '';
     this.author = '';
     this.category = '';
     this.lang = '';
     this.tag = '';
-    void this.load();
+    void this.load(1);
   }
 
   private get availableThemes(): string[] {
@@ -353,15 +391,29 @@ export class ProverbsApp extends LitElement {
     return html`<header class="collection-bar">
         <h1>${this.showFavorites ? 'Favorites' : 'All sayings'}</h1>
         <span>${this.showFavorites ? 'Saved sayings' : 'All sayings in library'}</span>
-        <label class="search-field"
-          ><i class="ph ph-magnifying-glass"></i
-          ><input
+        <div class="search-field">
+          <i class="ph ph-magnifying-glass"></i>
+          <input
             aria-label="Search"
             placeholder="Search all sayings…"
             .value=${this.query}
-            @input=${this.setText('query')}
-            @keydown=${(event: KeyboardEvent) => event.key === 'Enter' && void this.load()}
-        /></label>
+            @input=${(event: Event) => this.handleSearchInput(event)}
+            @keydown=${(event: KeyboardEvent) => this.handleSearchKeydown(event)}
+          />
+          ${
+            this.query
+              ? html`<button
+                  type="button"
+                  class="search-clear-btn"
+                  aria-label="Clear search and view all"
+                  title="Clear search and view all"
+                  @click=${() => this.clearSearch()}
+                >
+                  <i class="ph ph-x"></i>
+                </button>`
+              : nothing
+          }
+        </div>
         <button @click=${() => this.edit()}><i class="ph ph-plus"></i>New saying</button>
       </header>
       <section class="paper-feature">
@@ -394,7 +446,7 @@ export class ProverbsApp extends LitElement {
             : nothing
         }
         <button><i class="ph ph-sliders-horizontal"></i>Filter</button>
-        <button type="button" class="secondary" @click=${this.reset}>Reset</button>
+        <button type="button" class="secondary" @click=${() => this.reset()}>Reset</button>
       </form>
       ${
         this.loading
@@ -1288,8 +1340,10 @@ export class ProverbsApp extends LitElement {
       position: relative;
       justify-self: end;
       width: min(100%, 330px);
+      display: flex;
+      align-items: center;
     }
-    .search-field i {
+    .search-field > i {
       position: absolute;
       left: 13px;
       top: 50%;
@@ -1297,12 +1351,47 @@ export class ProverbsApp extends LitElement {
       color: #687973;
       font-size: 1.1rem;
       transform: translateY(-50%);
+      pointer-events: none;
     }
     .collection-bar input {
       justify-self: end;
+      width: 100%;
       max-width: none;
       height: 42px;
       padding-left: 40px;
+      padding-right: 38px;
+    }
+    .search-clear-btn {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 22px;
+      height: 22px;
+      padding: 0;
+      background: #e2ded6;
+      color: #3f554c;
+      border: 0;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 0.8rem;
+      transition: all 0.15s ease;
+      z-index: 2;
+    }
+    .search-clear-btn:hover {
+      background: #17382f;
+      color: #fffdf8;
+    }
+    .search-clear-btn i {
+      position: static;
+      left: auto;
+      top: auto;
+      transform: none;
+      font-size: 0.8rem;
+      color: inherit;
     }
     .collection-bar button,
     .compact-filters button {
