@@ -130,4 +130,86 @@ describe('ProverbsApp pagination preservation', () => {
     (element as any).handleSearchKeydown(escEvent);
     expect(element.query).toBe('');
   });
+
+  it('clears other filters when author or theme is set', () => {
+    element.category = 'Wisdom';
+    element.tag = 'stoic';
+    element.query = 'peace';
+
+    // Setting author should clear category, tag, query
+    (element as any).setFilter('author', 'Sam Harris');
+    expect(element.author).toBe('Sam Harris');
+    expect(element.category).toBe('');
+    expect(element.tag).toBe('');
+    expect(element.query).toBe('');
+
+    // Setting category/theme should clear author, tag, query
+    (element as any).setFilter('category', 'Mindfulness');
+    expect(element.category).toBe('Mindfulness');
+    expect(element.author).toBe('');
+    expect(element.tag).toBe('');
+    expect(element.query).toBe('');
+
+    // Setting tag should clear category, author, query
+    (element as any).setTag('zen');
+    expect(element.tag).toBe('zen');
+    expect(element.category).toBe('');
+    expect(element.author).toBe('');
+    expect(element.query).toBe('');
+  });
+
+  it('reflects the current filtering state in listHeading', () => {
+    // Unfiltered
+    expect((element as any).listHeading).toEqual({
+      title: 'All sayings',
+      subtitle: 'All sayings in library',
+    });
+
+    // Author filtered
+    element.author = 'Sam Harris';
+    expect((element as any).listHeading).toEqual({
+      title: 'Sayings by Sam Harris',
+      subtitle: 'Sayings attributed to Sam Harris',
+    });
+    element.author = '';
+
+    // Theme filtered
+    element.category = 'Wisdom';
+    expect((element as any).listHeading).toEqual({
+      title: 'Sayings on Wisdom',
+      subtitle: 'Explored under the Wisdom theme',
+    });
+    element.category = '';
+
+    // Tag filtered
+    element.tag = 'stoic';
+    expect((element as any).listHeading).toEqual({
+      title: 'Sayings tagged #stoic',
+      subtitle: 'Filtered by #stoic',
+    });
+    element.tag = '';
+
+    // Search query filtered
+    element.query = 'tranquility';
+    expect((element as any).listHeading).toEqual({
+      title: 'Sayings matching “tranquility”',
+      subtitle: 'Search results for “tranquility”',
+    });
+    element.query = '';
+
+    // Favorites unfiltered
+    element.showFavorites = true;
+    expect((element as any).listHeading).toEqual({
+      title: 'Favorites',
+      subtitle: 'Saved sayings',
+    });
+
+    // Favorites with author
+    element.author = 'Marcus Aurelius';
+    expect((element as any).listHeading).toEqual({
+      title: 'Favorite sayings by Marcus Aurelius',
+      subtitle: 'Saved sayings attributed to Marcus Aurelius',
+    });
+  });
 });
+

@@ -140,6 +140,11 @@ export class ProverbsApp extends LitElement {
   }
   private showView(favorites: boolean) {
     this.showFavorites = favorites;
+    this.query = '';
+    this.author = '';
+    this.category = '';
+    this.tag = '';
+    this.lang = '';
     this.openMenu = null;
     void this.load(1);
   }
@@ -305,6 +310,82 @@ export class ProverbsApp extends LitElement {
     void this.load(1);
   }
 
+  private get listHeading(): { title: string; subtitle: string } {
+    if (this.showFavorites) {
+      if (this.query.trim()) {
+        return {
+          title: `Favorite sayings matching “${this.query.trim()}”`,
+          subtitle: `Search results in saved sayings`,
+        };
+      }
+      if (this.author) {
+        return {
+          title: `Favorite sayings by ${this.author}`,
+          subtitle: `Saved sayings attributed to ${this.author}`,
+        };
+      }
+      if (this.category) {
+        return {
+          title: `Favorite sayings on ${this.category}`,
+          subtitle: `Saved sayings under the ${this.category} theme`,
+        };
+      }
+      if (this.tag) {
+        return {
+          title: `Favorite sayings tagged #${this.tag}`,
+          subtitle: `Saved sayings tagged #${this.tag}`,
+        };
+      }
+      return {
+        title: 'Favorites',
+        subtitle: 'Saved sayings',
+      };
+    }
+
+    if (this.query.trim()) {
+      return {
+        title: `Sayings matching “${this.query.trim()}”`,
+        subtitle: `Search results for “${this.query.trim()}”`,
+      };
+    }
+    if (this.author) {
+      return {
+        title: `Sayings by ${this.author}`,
+        subtitle: `Sayings attributed to ${this.author}`,
+      };
+    }
+    if (this.category) {
+      return {
+        title: `Sayings on ${this.category}`,
+        subtitle: `Explored under the ${this.category} theme`,
+      };
+    }
+    if (this.tag) {
+      return {
+        title: `Sayings tagged #${this.tag}`,
+        subtitle: `Filtered by #${this.tag}`,
+      };
+    }
+    return {
+      title: 'All sayings',
+      subtitle: 'All sayings in library',
+    };
+  }
+
+  private setFilter(key: 'author' | 'category' | 'lang' | 'tag', value: string) {
+    if (value) {
+      this.query = '';
+      this.author = '';
+      this.category = '';
+      this.tag = '';
+      this.lang = '';
+      this[key] = value;
+    } else {
+      this[key] = '';
+    }
+    void this.load(1);
+  }
+
   private get availableThemes(): string[] {
     return Array.from(
       new Set([...PREDEFINED_THEMES, ...this.filterOptions.categories.filter(Boolean)]),
@@ -312,7 +393,16 @@ export class ProverbsApp extends LitElement {
   }
 
   private setTag(tag: string) {
-    this.tag = this.tag === tag ? '' : tag;
+    const nextTag = this.tag === tag ? '' : tag;
+    if (nextTag) {
+      this.query = '';
+      this.author = '';
+      this.category = '';
+      this.lang = '';
+      this.tag = nextTag;
+    } else {
+      this.tag = '';
+    }
     void this.load(1);
   }
 
@@ -388,9 +478,10 @@ export class ProverbsApp extends LitElement {
   }
 
   private saywellList() {
+    const heading = this.listHeading;
     return html`<header class="collection-bar">
-        <h1>${this.showFavorites ? 'Favorites' : 'All sayings'}</h1>
-        <span>${this.showFavorites ? 'Saved sayings' : 'All sayings in library'}</span>
+        <h1 title=${heading.title}>${heading.title}</h1>
+        <span>${heading.subtitle}</span>
         <div class="search-field">
           <i class="ph ph-magnifying-glass"></i>
           <input
@@ -684,11 +775,12 @@ export class ProverbsApp extends LitElement {
       aria-label=${label}
       .value=${this[key]}
       @change=${(e: Event) => {
-        this[key] = (e.target as HTMLSelectElement).value;
+        const val = (e.target as HTMLSelectElement).value;
+        this.setFilter(key, val);
       }}
     >
-      <option value="">${label}</option>
-      ${options.map((v) => html`<option value=${v}>${v}</option>`)}
+      <option value="" ?selected=${!this[key]}>${label}</option>
+      ${options.map((v) => html`<option value=${v} ?selected=${this[key] === v}>${v}</option>`)}
     </select>`;
   }
   private form() {
@@ -1331,10 +1423,17 @@ export class ProverbsApp extends LitElement {
       font:
         400 1.45rem Georgia,
         serif;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 420px;
     }
     .collection-bar > span {
       color: #596963;
       font-size: 0.8rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     .search-field {
       position: relative;
