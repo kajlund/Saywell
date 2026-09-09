@@ -32,7 +32,7 @@ describe('ProverbsApp pagination preservation', () => {
       languages: [],
       tags: [],
     });
-    vi.spyOn(api, 'random').mockResolvedValue(null);
+    vi.spyOn(api, 'random').mockResolvedValue(null as any);
     vi.spyOn(api, 'update').mockResolvedValue({} as any);
 
     element = new ProverbsApp();
@@ -212,4 +212,3 @@ describe('ProverbsApp pagination preservation', () => {
     });
   });
 });
-

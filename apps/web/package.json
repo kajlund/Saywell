@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "@phosphor-icons/web": "^2.1.2",
-    "@proverbs/contracts": "workspace:*",
+    "@proverbs/contracts": "*",
     "lit": "^3.3.1"
   },
   "devDependencies": {

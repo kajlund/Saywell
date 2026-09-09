@@ -3,23 +3,25 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "packageManager": "pnpm@10.34.5",
   "engines": {
     "node": ">=22"
   },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
-    "dev": "pnpm -r --parallel --if-present dev",
-    "dev:api": "pnpm --filter @proverbs/api dev",
-    "dev:web": "pnpm --filter @proverbs/web dev",
-    "start": "pnpm --filter @proverbs/api start",
-    "build": "pnpm -r --if-present run build",
+    "dev:api": "npm run dev -w @proverbs/api",
+    "dev:web": "npm run dev -w @proverbs/web",
+    "start": "npm run start -w @proverbs/api",
+    "build": "npm run build --workspaces --if-present",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "typecheck": "pnpm -r --if-present run typecheck",
-    "test": "pnpm -r --if-present run test",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm test --workspaces --if-present",
     "format": "prettier --write --no-error-on-unmatched-pattern \"{apps,packages}/**/*.{ts,css,json,html,md}\" \"scripts/**/*.mjs\" \"*.{json,md,mjs,yaml}\"",
     "format:check": "prettier --check --no-error-on-unmatched-pattern \"{apps,packages}/**/*.{ts,css,json,html,md}\" \"scripts/**/*.mjs\" \"*.{json,md,mjs,yaml}\"",
-    "check": "pnpm run format:check && pnpm run lint && pnpm run typecheck && pnpm run test"
+    "check": "npm run format:check && npm run lint && npm run typecheck && npm test"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

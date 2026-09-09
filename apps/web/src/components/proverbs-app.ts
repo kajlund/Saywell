@@ -166,7 +166,7 @@ export class ProverbsApp extends LitElement {
     if (this.showFavorites) result.set('favorite', 'true');
     return result;
   }
-  private async load(page = 1) {
+  private async load(page = 1): Promise<void> {
     this.loading = true;
     this.error = '';
     try {
@@ -825,8 +825,7 @@ export class ProverbsApp extends LitElement {
       </div>
       ${this.input('tags', 'Tags (comma-separated)')}
       <footer>
-        <button type="button" class="secondary" @click=${() => this.closeForm()}>
-          Cancel</button
+        <button type="button" class="secondary" @click=${() => this.closeForm()}>Cancel</button
         ><button>Save proverb</button>
       </footer>
     </form>`;
@@ -1819,7 +1818,9 @@ export class ProverbsApp extends LitElement {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      transition: color 0.15s, background-color 0.15s;
+      transition:
+        color 0.15s,
+        background-color 0.15s;
     }
     .form-close:hover {
       color: #fff;
