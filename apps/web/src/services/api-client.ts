@@ -5,8 +5,10 @@ import type {
   FilterOptions,
   Pagination,
   Proverb,
+  TakeoutExport,
   UpdateProverb,
 } from '@proverbs/contracts';
+
 
 type ListResult = { data: Proverb[]; pagination: Pagination };
 
@@ -64,4 +66,6 @@ export const api = {
     ).data,
   delete: async (id: string) =>
     request<Record<string, never>>(`/api/proverbs/${id}`, { method: 'DELETE' }),
+  exportTakeout: async () => (await request<TakeoutExport>('/api/config/export')).data,
 };
+

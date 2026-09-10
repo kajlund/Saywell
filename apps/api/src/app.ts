@@ -94,6 +94,13 @@ export function createApp(
     c.json({ success: true, data: await service.getFilterOptions() }),
   );
 
+  app.get('/api/config/export', async (c) => {
+    const data = await service.exportTakeout();
+    const date = new Date().toISOString().slice(0, 10);
+    c.header('content-disposition', `attachment; filename="saywell-takeout-${date}.json"`);
+    return c.json({ success: true, data });
+  });
+
   app.get('/api/random', zValidator('query', randomProverbQuerySchema, validation), async (c) => {
     const proverb = await service.getRandomProverb(c.req.valid('query'));
     return c.json({ success: true, proverb });

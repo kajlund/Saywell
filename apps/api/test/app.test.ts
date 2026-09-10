@@ -25,8 +25,22 @@ function service(overrides: Record<string, unknown> = {}) {
       languages: [],
       tags: [],
     }),
+    exportTakeout: vi.fn().mockResolvedValue({
+      version: 1,
+      appName: 'Saywell',
+      exportedAt: new Date().toISOString(),
+      stats: {
+        totalSayings: 0,
+        favoriteCount: 0,
+        authorsCount: 0,
+        categoriesCount: 0,
+        tagsCount: 0,
+      },
+      data: { proverbs: [] },
+    }),
     ...overrides,
   } as any;
+
 }
 
 describe('Proverbs API', () => {
@@ -85,4 +99,52 @@ describe('Proverbs API', () => {
     expect(response.status).toBe(400);
     expect(await response.json()).toMatchObject({ error: { code: 'VALIDATION_ERROR' } });
   });
+
+  it('exports system data takeout with attachment headers', async () => {
+    const exportTakeout = vi.fn().mockResolvedValue({
+      version: 1,
+      appName: 'Saywell',
+      exportedAt: '2026-09-09T12:00:00.000Z',
+      stats: {
+        totalSayings: 2,
+        favoriteCount: 1,
+        authorsCount: 2,
+        categoriesCount: 1,
+        tagsCount: 2,
+      },
+      data: {
+        proverbs: [
+          {
+            _id: '665544332211009988776655',
+            userId: '665544332211009988776655',
+            title: 'Sample',
+            author: 'Author',
+            content: 'Content that is sufficiently long.',
+            description: '',
+            lang: 'eng',
+            category: 'wisdom',
+            tags: ['tag'],
+            favorite: true,
+          },
+        ],
+      },
+    });
+
+    const response = await app({ exportTakeout }).request('/api/config/export');
+    expect(response.status).toBe(200);
+    expect(response.headers.get('content-disposition')).toMatch(
+      /attachment; filename="saywell-takeout-\d{4}-\d{2}-\d{2}\.json"/,
+    );
+    const body = await response.json();
+    expect(body).toMatchObject({
+      success: true,
+      data: {
+        version: 1,
+        appName: 'Saywell',
+        stats: { totalSayings: 2 },
+      },
+    });
+    expect(exportTakeout).toHaveBeenCalled();
+  });
 });
+

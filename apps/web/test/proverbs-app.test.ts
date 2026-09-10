@@ -211,4 +211,50 @@ describe('ProverbsApp pagination preservation', () => {
       subtitle: 'Saved sayings attributed to Marcus Aurelius',
     });
   });
+
+  it('navigates to config view and back', () => {
+    expect(element.showingConfig).toBe(false);
+
+    (element as any).showConfig();
+    expect(element.showingConfig).toBe(true);
+    expect(element.editing).toBe(false);
+
+    (element as any).showView(false);
+    expect(element.showingConfig).toBe(false);
+    expect(element.showFavorites).toBe(false);
+  });
+
+  it('exports system data takeout to a json file', async () => {
+    const mockTakeout = {
+      version: 1,
+      appName: 'Saywell',
+      exportedAt: '2026-09-09T12:00:00.000Z',
+      stats: {
+        totalSayings: 12,
+        favoriteCount: 3,
+        authorsCount: 4,
+        categoriesCount: 2,
+        tagsCount: 5,
+      },
+      data: { proverbs: [] },
+    };
+    vi.spyOn(api, 'exportTakeout').mockResolvedValue(mockTakeout as any);
+
+    const origCreateObjectURL = URL.createObjectURL;
+    const origRevokeObjectURL = URL.revokeObjectURL;
+    URL.createObjectURL = vi.fn().mockReturnValue('blob:mock');
+    URL.revokeObjectURL = vi.fn();
+
+    try {
+      await (element as any).exportData();
+      expect(api.exportTakeout).toHaveBeenCalled();
+      expect(element.exportSuccess).toContain('Successfully exported 12 sayings');
+      expect(URL.createObjectURL).toHaveBeenCalled();
+      expect(URL.revokeObjectURL).toHaveBeenCalled();
+    } finally {
+      URL.createObjectURL = origCreateObjectURL;
+      URL.revokeObjectURL = origRevokeObjectURL;
+    }
+  });
 });
+

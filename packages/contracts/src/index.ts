@@ -78,3 +78,32 @@ export type ApiError = {
   success: false;
   error: { code: string; message: string; requestId: string; details?: unknown };
 };
+
+export const takeoutProverbSchema = proverbSchema.extend({
+  _id: objectIdSchema,
+  createdAt: z.string().optional(),
+  updatedAt: z.string().optional(),
+});
+
+export const takeoutStatsSchema = z.object({
+  totalSayings: z.number().int().min(0),
+  favoriteCount: z.number().int().min(0),
+  authorsCount: z.number().int().min(0),
+  categoriesCount: z.number().int().min(0),
+  tagsCount: z.number().int().min(0),
+});
+
+export const takeoutExportSchema = z.object({
+  version: z.literal(1),
+  appName: z.literal('Saywell'),
+  exportedAt: z.string(),
+  stats: takeoutStatsSchema,
+  data: z.object({
+    proverbs: z.array(takeoutProverbSchema),
+  }),
+});
+
+export type TakeoutStats = z.infer<typeof takeoutStatsSchema>;
+export type TakeoutProverb = z.infer<typeof takeoutProverbSchema>;
+export type TakeoutExport = z.infer<typeof takeoutExportSchema>;
+

@@ -1,7 +1,7 @@
 import mongoose, { type FilterQuery } from 'mongoose';
 import { DomainError } from '../errors/domain-error.js';
 import { ProverbModel, type ProverbDocument } from '../models/proverb-model.js';
-import type { CreateProverb, Pagination, UpdateProverb } from '@proverbs/contracts';
+import type { CreateProverb, Pagination, TakeoutExport, UpdateProverb } from '@proverbs/contracts';
 
 export class ProverbService {
   async createProverb(input: CreateProverb) {
@@ -155,7 +155,57 @@ export class ProverbService {
       tags: normalizeTags(tags as string[]),
     };
   }
+
+  async exportTakeout(): Promise<TakeoutExport> {
+    const rawProverbs = await ProverbModel.find().sort('createdAt').lean();
+
+    const proverbs = rawProverbs.map((p) => ({
+      _id: p._id.toString(),
+      userId: p.userId.toString(),
+      title: p.title,
+      author: p.author,
+      content: p.content,
+      description: p.description ?? '',
+      lang: p.lang ?? 'eng',
+      category: p.category,
+      tags: p.tags ?? [],
+      favorite: Boolean(p.favorite),
+      createdAt: p.createdAt ? new Date(p.createdAt).toISOString() : undefined,
+      updatedAt: p.updatedAt ? new Date(p.updatedAt).toISOString() : undefined,
+    }));
+
+    const authors = new Set<string>();
+    const categories = new Set<string>();
+    const tags = new Set<string>();
+    let favoriteCount = 0;
+
+    for (const proverb of proverbs) {
+      if (proverb.author) authors.add(proverb.author);
+      if (proverb.category) categories.add(proverb.category);
+      if (proverb.favorite) favoriteCount += 1;
+      for (const tag of proverb.tags) {
+        if (tag) tags.add(tag);
+      }
+    }
+
+    return {
+      version: 1,
+      appName: 'Saywell',
+      exportedAt: new Date().toISOString(),
+      stats: {
+        totalSayings: proverbs.length,
+        favoriteCount,
+        authorsCount: authors.size,
+        categoriesCount: categories.size,
+        tagsCount: tags.size,
+      },
+      data: {
+        proverbs,
+      },
+    };
+  }
 }
+
 
 function normalizeTags(tags?: string[]): string[] {
   if (!tags) return [];

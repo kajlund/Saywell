@@ -41,6 +41,9 @@ const emptyFilters = (): FilterOptions => ({
 export class ProverbsApp extends LitElement {
   static properties = {
     editing: { state: true },
+    showingConfig: { state: true },
+    exporting: { state: true },
+    exportSuccess: { state: true },
     proverbs: { state: true },
     featured: { state: true },
     selected: { state: true },
@@ -60,6 +63,9 @@ export class ProverbsApp extends LitElement {
     detailItem: { state: true },
   };
   declare editing: boolean;
+  declare showingConfig: boolean;
+  declare exporting: boolean;
+  declare exportSuccess: string;
   declare proverbs: Proverb[];
   declare featured: Proverb | null;
   declare selected: Proverb | null;
@@ -82,6 +88,9 @@ export class ProverbsApp extends LitElement {
   constructor() {
     super();
     this.editing = false;
+    this.showingConfig = false;
+    this.exporting = false;
+    this.exportSuccess = '';
     this.proverbs = [];
     this.featured = null;
     this.selected = null;
@@ -101,6 +110,7 @@ export class ProverbsApp extends LitElement {
     this.detailItem = null;
     this.editReturnPage = 1;
   }
+
   connectedCallback() {
     super.connectedCallback();
     void Promise.all([
@@ -139,7 +149,9 @@ export class ProverbsApp extends LitElement {
     }
   }
   private showView(favorites: boolean) {
+    this.showingConfig = false;
     this.showFavorites = favorites;
+    this.editing = false;
     this.query = '';
     this.author = '';
     this.category = '';
@@ -148,10 +160,43 @@ export class ProverbsApp extends LitElement {
     this.openMenu = null;
     void this.load(1);
   }
+  private showConfig() {
+    this.showingConfig = true;
+    this.editing = false;
+    this.openMenu = null;
+    this.exportSuccess = '';
+  }
+  private async exportData() {
+    this.exporting = true;
+    this.exportSuccess = '';
+    this.error = '';
+    try {
+      const takeout = await api.exportTakeout();
+      const blob = new Blob([JSON.stringify(takeout, null, 2)], {
+        type: 'application/json;charset=utf-8',
+      });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      const filename = `saywell-takeout-${new Date().toISOString().slice(0, 10)}.json`;
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      this.exportSuccess = `Successfully exported ${takeout.stats.totalSayings} sayings to ${filename}`;
+    } catch (error) {
+      this.fail(error);
+    } finally {
+      this.exporting = false;
+    }
+  }
   private async copyItem(item: Proverb) {
     await navigator.clipboard.writeText(`“${item.content}” — ${item.author}`);
     this.openMenu = null;
   }
+
 
   private params(page: number) {
     const result = new URLSearchParams({ page: String(page), limit: '10' });
@@ -211,6 +256,7 @@ export class ProverbsApp extends LitElement {
     this.draft = emptyDraft();
   }
   private edit(item?: Proverb) {
+    this.showingConfig = false;
     this.editReturnPage = this.pagination?.page || 1;
     this.selected = item ?? null;
     this.error = '';
@@ -227,6 +273,7 @@ export class ProverbsApp extends LitElement {
       : emptyDraft();
     this.editing = true;
   }
+
   private async save(event: SubmitEvent) {
     event.preventDefault();
     const value: CreateProverb = {
@@ -417,6 +464,7 @@ export class ProverbsApp extends LitElement {
           class="saywell-brand"
           @click=${() => {
             this.editing = false;
+            this.showingConfig = false;
             void this.load();
           }}
         >
@@ -425,26 +473,36 @@ export class ProverbsApp extends LitElement {
         </button>
         <div class="side-links">
           <button
-            class=${this.showFavorites ? '' : 'selected'}
+            class=${!this.showFavorites && !this.showingConfig ? 'selected' : ''}
             @click=${() => this.showView(false)}
           >
             <i class="ph ph-quotes"></i>All sayings</button
           ><button
-            class=${this.showFavorites ? 'selected' : ''}
+            class=${this.showFavorites && !this.showingConfig ? 'selected' : ''}
             @click=${() => this.showView(true)}
           >
             <i class="ph ph-heart"></i>Favorites
             <span class="nav-count">${this.favoriteTotal}</span>
           </button>
           <button @click=${() => this.edit()}><i class="ph ph-plus-circle"></i>Add saying</button>
+          <button
+            class=${this.showingConfig ? 'selected' : ''}
+            @click=${() => this.showConfig()}
+          >
+            <i class="ph ph-gear"></i>Config
+          </button>
         </div>
         <blockquote>“Words are little wells of thought.”<span>— John Ruskin</span></blockquote>
       </aside>
       <main class="reading-room">
         ${this.error ? html`<aside role="alert">${this.error}</aside>` : nothing}
-        ${this.editing ? this.form() : this.saywellList()}
+        ${this.showingConfig
+          ? this.configView()
+          : this.editing
+            ? this.form()
+            : this.saywellList()}
       </main>
-      ${this.editing ? nothing : this.tagsRail()}
+      ${this.editing || this.showingConfig ? nothing : this.tagsRail()}
       ${
         this.detailItem
           ? html`<div class="detail-backdrop" @click=${() => (this.detailItem = null)}>
@@ -461,12 +519,15 @@ export class ProverbsApp extends LitElement {
                 >
                   <i class="ph ph-x"></i>
                 </button>
-                <small
-                  >Theme: ${this.detailItem.category} · ${this.detailItem.lang.toUpperCase()}</small
-                >
-                <blockquote>${this.detailItem.content}</blockquote>
-                <p>— ${this.detailItem.author}</p>
-                ${this.detailItem.description ? html`<div class="detail-description">${this.detailItem.description}</div>` : nothing}
+                <div class="detail-meta">
+                  <span class="detail-cat">${this.detailItem.category}</span>
+                  <span class="detail-lang">${this.detailItem.lang.toUpperCase()}</span>
+                </div>
+                <blockquote class="detail-quote">“${this.detailItem.content}”</blockquote>
+                <p class="detail-author">— ${this.detailItem.author}</p>
+                ${this.detailItem.description
+                  ? html`<p class="detail-desc">${this.detailItem.description}</p>`
+                  : nothing}
                 <div class="detail-tags">
                   ${this.detailItem.tags.map((tag) => html`<span>#${tag}</span>`)}
                 </div>
@@ -475,6 +536,81 @@ export class ProverbsApp extends LitElement {
           : nothing
       }
     </div>`;
+  }
+
+  private configView() {
+    const totalSayings = this.pagination?.total || this.proverbs.length;
+    return html`
+      <header class="collection-bar config-header">
+        <h1>Configuration</h1>
+        <span>SYSTEM SETTINGS & DATA TAKEOUT</span>
+      </header>
+      <div class="config-content">
+        <section class="config-card">
+          <div class="config-card-header">
+            <div class="config-card-title-group">
+              <i class="ph ph-file-arrow-down config-icon"></i>
+              <div>
+                <h2>Data Takeout</h2>
+                <p>Export all sayings, metadata, favorites, authors, and categories to a single JSON archive.</p>
+              </div>
+            </div>
+            <button
+              class="primary-btn export-action-btn"
+              ?disabled=${this.exporting}
+              @click=${() => void this.exportData()}
+            >
+              <i class=${this.exporting ? 'ph ph-spinner ph-spin' : 'ph ph-download-simple'}></i>
+              ${this.exporting ? 'Preparing export…' : 'Export all data (JSON)'}
+            </button>
+          </div>
+
+          <div class="config-stats-grid">
+            <div class="stat-pill">
+              <span class="stat-label">Total Sayings</span>
+              <strong class="stat-value">${totalSayings}</strong>
+            </div>
+            <div class="stat-pill">
+              <span class="stat-label">Favorites</span>
+              <strong class="stat-value">${this.favoriteTotal}</strong>
+            </div>
+            <div class="stat-pill">
+              <span class="stat-label">Categories</span>
+              <strong class="stat-value">${this.filterOptions.categories.length}</strong>
+            </div>
+            <div class="stat-pill">
+              <span class="stat-label">Tags</span>
+              <strong class="stat-value">${this.filterOptions.tags.length}</strong>
+            </div>
+            <div class="stat-pill">
+              <span class="stat-label">Archive Format</span>
+              <strong class="stat-value">JSON Takeout v1</strong>
+            </div>
+          </div>
+
+          ${
+            this.exportSuccess
+              ? html`<div class="config-notice success">
+                  <i class="ph ph-check-circle"></i>
+                  <span>${this.exportSuccess}</span>
+                </div>`
+              : nothing
+          }
+
+          <div class="config-restore-note">
+            <div class="note-heading">
+              <i class="ph ph-shield-check"></i>
+              <strong>Full Database Restore Ready</strong>
+            </div>
+            <p>
+              This takeout file preserves complete document structure including primary IDs (<code>_id</code>),
+              user references (<code>userId</code>), original timestamps, categories, and tags.
+              It is structured so that a complete database restore or import operation can be performed at any time.
+            </p>
+          </div>
+        </section>
+      </div>
+    `;
   }
 
   private saywellList() {
@@ -1889,7 +2025,166 @@ export class ProverbsApp extends LitElement {
       border-radius: 4px;
       font-size: 0.74rem;
     }
+    .config-header {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 4px;
+    }
+    .config-header h1 {
+      margin: 0;
+      color: #1b3730;
+      font:
+        400 1.6rem Georgia,
+        serif;
+    }
+    .config-header span {
+      color: #596963;
+      font-size: 0.75rem;
+      letter-spacing: 0.12em;
+    }
+    .config-content {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      max-width: 900px;
+    }
+    .config-card {
+      padding: 32px;
+      background: #fcfbf7;
+      border: 1px solid #dcded9;
+      border-radius: 4px;
+      box-shadow: 0 4px 18px rgba(29, 47, 39, 0.04);
+    }
+    .config-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 24px;
+      flex-wrap: wrap;
+      padding-bottom: 24px;
+      border-bottom: 1px solid #eceee9;
+    }
+    .config-card-title-group {
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+    }
+    .config-icon {
+      font-size: 2rem;
+      color: #1b3730;
+      background: #edece6;
+      padding: 12px;
+      border-radius: 8px;
+    }
+    .config-card-title-group h2 {
+      margin: 0 0 6px;
+      font:
+        400 1.35rem Georgia,
+        serif;
+      color: #17382f;
+    }
+    .config-card-title-group p {
+      margin: 0;
+      color: #556761;
+      font-size: 0.92rem;
+      line-height: 1.45;
+    }
+    .export-action-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 22px;
+      background: #17382f;
+      color: #fffdf8;
+      border: 0;
+      border-radius: 4px;
+      font-weight: 600;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+    .export-action-btn:hover:not(:disabled) {
+      background: #244f43;
+    }
+    .export-action-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    .config-stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 14px;
+      margin-top: 24px;
+    }
+    .stat-pill {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding: 14px 16px;
+      background: #f4f2ea;
+      border-radius: 4px;
+      border: 1px solid #e3e5df;
+    }
+    .stat-label {
+      font-size: 0.75rem;
+      color: #63736d;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .stat-value {
+      font-size: 1.25rem;
+      color: #17382f;
+      font-family: Georgia, serif;
+    }
+    .config-notice {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 20px;
+      padding: 14px 18px;
+      border-radius: 4px;
+      font-size: 0.9rem;
+    }
+    .config-notice.success {
+      background: #eef5ee;
+      color: #205c2a;
+      border: 1px solid #c9e0cb;
+    }
+    .config-restore-note {
+      margin-top: 24px;
+      padding: 18px 20px;
+      background: #f8f7f2;
+      border-left: 3px solid #17382f;
+      border-radius: 2px;
+    }
+    .note-heading {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #17382f;
+      margin-bottom: 8px;
+      font-size: 0.95rem;
+    }
+    .note-heading i {
+      font-size: 1.15rem;
+    }
+    .config-restore-note p {
+      margin: 0;
+      font-size: 0.88rem;
+      color: #4a5c55;
+      line-height: 1.5;
+    }
+    .config-restore-note code {
+      background: #eae8df;
+      padding: 2px 5px;
+      border-radius: 3px;
+      font-size: 0.85em;
+      font-family: monospace;
+    }
     @media (max-width: 1050px) {
+
       .app-shell {
         grid-template-columns: 210px minmax(0, 1fr);
       }
