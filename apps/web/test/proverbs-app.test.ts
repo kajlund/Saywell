@@ -212,16 +212,29 @@ describe('ProverbsApp pagination preservation', () => {
     });
   });
 
-  it('navigates to config view and back', () => {
+  it('navigates to config view and back', async () => {
+    document.body.appendChild(element);
+    await element.updateComplete;
+
     expect(element.showingConfig).toBe(false);
+    const navIcon = element.shadowRoot?.querySelector('.side-links button i.ph-gear');
+    expect(navIcon).not.toBeNull();
 
     (element as any).showConfig();
+    await element.updateComplete;
+
     expect(element.showingConfig).toBe(true);
     expect(element.editing).toBe(false);
+    const pageIcon = element.shadowRoot?.querySelector('.config-header h1 i.ph-gear');
+    expect(pageIcon).not.toBeNull();
 
     (element as any).showView(false);
+    await element.updateComplete;
+
     expect(element.showingConfig).toBe(false);
     expect(element.showFavorites).toBe(false);
+
+    element.remove();
   });
 
   it('exports system data takeout to a json file', async () => {
@@ -257,4 +270,3 @@ describe('ProverbsApp pagination preservation', () => {
     }
   });
 });
-

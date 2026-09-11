@@ -197,7 +197,6 @@ export class ProverbsApp extends LitElement {
     this.openMenu = null;
   }
 
-
   private params(page: number) {
     const result = new URLSearchParams({ page: String(page), limit: '10' });
     for (const [key, value] of Object.entries({
@@ -485,22 +484,15 @@ export class ProverbsApp extends LitElement {
             <span class="nav-count">${this.favoriteTotal}</span>
           </button>
           <button @click=${() => this.edit()}><i class="ph ph-plus-circle"></i>Add saying</button>
-          <button
-            class=${this.showingConfig ? 'selected' : ''}
-            @click=${() => this.showConfig()}
-          >
-            <i class="ph ph-gear"></i>Config
+          <button class=${this.showingConfig ? 'selected' : ''} @click=${() => this.showConfig()}>
+            <i class="ph ph-gear"></i>Configuration
           </button>
         </div>
         <blockquote>“Words are little wells of thought.”<span>— John Ruskin</span></blockquote>
       </aside>
       <main class="reading-room">
         ${this.error ? html`<aside role="alert">${this.error}</aside>` : nothing}
-        ${this.showingConfig
-          ? this.configView()
-          : this.editing
-            ? this.form()
-            : this.saywellList()}
+        ${this.showingConfig ? this.configView() : this.editing ? this.form() : this.saywellList()}
       </main>
       ${this.editing || this.showingConfig ? nothing : this.tagsRail()}
       ${
@@ -525,9 +517,11 @@ export class ProverbsApp extends LitElement {
                 </div>
                 <blockquote class="detail-quote">“${this.detailItem.content}”</blockquote>
                 <p class="detail-author">— ${this.detailItem.author}</p>
-                ${this.detailItem.description
-                  ? html`<p class="detail-desc">${this.detailItem.description}</p>`
-                  : nothing}
+                ${
+                  this.detailItem.description
+                    ? html`<p class="detail-desc">${this.detailItem.description}</p>`
+                    : nothing
+                }
                 <div class="detail-tags">
                   ${this.detailItem.tags.map((tag) => html`<span>#${tag}</span>`)}
                 </div>
@@ -542,7 +536,7 @@ export class ProverbsApp extends LitElement {
     const totalSayings = this.pagination?.total || this.proverbs.length;
     return html`
       <header class="collection-bar config-header">
-        <h1>Configuration</h1>
+        <h1><i class="ph ph-gear"></i>Configuration</h1>
         <span>SYSTEM SETTINGS & DATA TAKEOUT</span>
       </header>
       <div class="config-content">
@@ -552,7 +546,10 @@ export class ProverbsApp extends LitElement {
               <i class="ph ph-file-arrow-down config-icon"></i>
               <div>
                 <h2>Data Takeout</h2>
-                <p>Export all sayings, metadata, favorites, authors, and categories to a single JSON archive.</p>
+                <p>
+                  Export all sayings, metadata, favorites, authors, and categories to a single JSON
+                  archive.
+                </p>
               </div>
             </div>
             <button
@@ -603,9 +600,10 @@ export class ProverbsApp extends LitElement {
               <strong>Full Database Restore Ready</strong>
             </div>
             <p>
-              This takeout file preserves complete document structure including primary IDs (<code>_id</code>),
-              user references (<code>userId</code>), original timestamps, categories, and tags.
-              It is structured so that a complete database restore or import operation can be performed at any time.
+              This takeout file preserves complete document structure including primary IDs
+              (<code>_id</code>), user references (<code>userId</code>), original timestamps,
+              categories, and tags. It is structured so that a complete database restore or import
+              operation can be performed at any time.
             </p>
           </div>
         </section>
@@ -1016,6 +1014,16 @@ export class ProverbsApp extends LitElement {
     .ph-briefcase::before {
       content: '\\e0ee';
     }
+    .ph-check-circle::before {
+      content: '\\e184';
+    }
+    .ph-cog::before,
+    .ph-gear::before {
+      content: '\\e270';
+    }
+    .ph-gear-six::before {
+      content: '\\e272';
+    }
     .ph-copy::before {
       content: '\\e1ca';
     }
@@ -1025,8 +1033,14 @@ export class ProverbsApp extends LitElement {
     .ph-dots-three::before {
       content: '\\e1fe';
     }
+    .ph-download-simple::before {
+      content: '\\e20c';
+    }
     .ph-eye::before {
       content: '\\e220';
+    }
+    .ph-file-arrow-down::before {
+      content: '\\e232';
     }
     .ph-hands-praying::before {
       content: '\\ecc8';
@@ -1061,11 +1075,29 @@ export class ProverbsApp extends LitElement {
     .ph-shield::before {
       content: '\\e40a';
     }
+    .ph-shield-check::before {
+      content: '\\e40c';
+    }
     .ph-sliders-horizontal::before {
       content: '\\e434';
     }
     .ph-smiley::before {
       content: '\\e436';
+    }
+    .ph-spinner::before {
+      content: '\\e66a';
+    }
+    @keyframes ph-spin {
+      from {
+        transform: rotate(0deg);
+      }
+      to {
+        transform: rotate(360deg);
+      }
+    }
+    .ph-spin {
+      animation: ph-spin 1s linear infinite;
+      display: inline-block;
     }
     .ph-sun::before {
       content: '\\e472';
@@ -2037,6 +2069,13 @@ export class ProverbsApp extends LitElement {
       font:
         400 1.6rem Georgia,
         serif;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .config-header h1 i {
+      font-size: 1.4rem;
+      color: #385a50;
     }
     .config-header span {
       color: #596963;
@@ -2184,7 +2223,6 @@ export class ProverbsApp extends LitElement {
       font-family: monospace;
     }
     @media (max-width: 1050px) {
-
       .app-shell {
         grid-template-columns: 210px minmax(0, 1fr);
       }
