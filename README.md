@@ -20,7 +20,13 @@ In VS Code, use **Terminal → Run Task → Proverbs: Start development**. This 
 web client in separate terminal panels so either process can restart without disrupting the other.
 The API runs on port 3000 and the web client runs on port 5173 with Vite proxying API calls.
 
-Outside VS Code, start the processes in two terminals:
+Outside VS Code, start both processes together:
+
+```bash
+npm run dev
+```
+
+Or start them individually in separate terminals:
 
 ```bash
 npm run dev:api
