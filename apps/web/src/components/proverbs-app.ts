@@ -457,7 +457,9 @@ export class ProverbsApp extends LitElement {
   }
 
   private renderSaywell() {
-    return html`<div class="app-shell">
+    return html`<div
+      class="app-shell ${this.editing ? 'is-editing' : ''} ${this.showingConfig ? 'is-config' : ''}"
+    >
       <aside class="side-rail">
         <button
           class="saywell-brand"
@@ -1237,6 +1239,11 @@ export class ProverbsApp extends LitElement {
       max-width: 760px;
       margin: 35px auto;
     }
+    @media (min-width: 1200px) {
+      .panel {
+        max-width: 1520px;
+      }
+    }
     .panel label {
       display: grid;
       gap: 7px;
@@ -1481,6 +1488,19 @@ export class ProverbsApp extends LitElement {
       height: 100vh;
       height: 100dvh;
       overflow: hidden;
+    }
+    .app-shell.is-editing,
+    .app-shell.is-config,
+    .app-shell:has(.panel),
+    .app-shell:has(.config-content) {
+      grid-template-columns: 260px minmax(0, 1fr);
+    }
+    .app-shell.is-editing .reading-room,
+    .app-shell.is-config .reading-room,
+    .app-shell:has(.panel) .reading-room,
+    .app-shell:has(.config-content) .reading-room {
+      grid-column: 2 / -1;
+      overflow-y: auto;
     }
     .side-rail {
       display: flex;
@@ -1969,8 +1989,14 @@ export class ProverbsApp extends LitElement {
     }
     .reading-room .panel {
       position: relative;
+      width: 100%;
       max-width: 760px;
       margin: 40px auto;
+    }
+    @media (min-width: 1200px) {
+      .reading-room .panel {
+        max-width: 1520px;
+      }
     }
     .form-close {
       position: absolute;
