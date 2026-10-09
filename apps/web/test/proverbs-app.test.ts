@@ -32,8 +32,12 @@ describe('ProverbsApp pagination preservation', () => {
       languages: [],
       tags: [],
     });
-    vi.spyOn(api, 'random').mockResolvedValue(null as any);
-    vi.spyOn(api, 'update').mockResolvedValue({} as any);
+    vi.spyOn(api, 'random').mockResolvedValue(
+      null as unknown as Awaited<ReturnType<typeof api.random>>,
+    );
+    vi.spyOn(api, 'update').mockResolvedValue(
+      {} as Awaited<ReturnType<typeof api.update>>,
+    );
 
     element = new ProverbsApp();
   });
@@ -43,15 +47,15 @@ describe('ProverbsApp pagination preservation', () => {
   });
 
   it('remembers starting page when opening edit form and reloads that page upon saving', async () => {
-    await (element as any).load(2);
+    await element['load'](2);
     expect(element.pagination.page).toBe(2);
 
     const testItem = element.proverbs[0];
-    (element as any).edit(testItem);
+    element['edit'](testItem);
     expect(element.editing).toBe(true);
 
     const fakeEvent = { preventDefault: vi.fn() } as unknown as SubmitEvent;
-    await (element as any).save(fakeEvent);
+    await element['save'](fakeEvent);
 
     expect(element.editing).toBe(false);
     expect(api.update).toHaveBeenCalledWith('test-1', expect.anything());
@@ -61,13 +65,13 @@ describe('ProverbsApp pagination preservation', () => {
   });
 
   it('closes form without resetting page when cancel/close is called', async () => {
-    await (element as any).load(3);
+    await element['load'](3);
     element.pagination = { total: 30, page: 3, pages: 3 };
 
-    (element as any).edit(element.proverbs[0]);
+    element['edit'](element.proverbs[0]);
     expect(element.editing).toBe(true);
 
-    (element as any).closeForm();
+    element['closeForm']();
     expect(element.editing).toBe(false);
     expect(element.selected).toBeNull();
     expect(element.pagination.page).toBe(3);
@@ -80,7 +84,7 @@ describe('ProverbsApp pagination preservation', () => {
     element.lang = 'eng';
 
     const inputEvent = { target: { value: 'patience' } } as unknown as Event;
-    (element as any).handleSearchInput(inputEvent);
+    element['handleSearchInput'](inputEvent);
 
     expect(element.query).toBe('patience');
     expect(element.category).toBe('');
@@ -97,7 +101,7 @@ describe('ProverbsApp pagination preservation', () => {
     element.lang = 'eng';
     element.showFavorites = true;
 
-    await (element as any).clearSearch();
+    await element['clearSearch']();
 
     expect(element.query).toBe('');
     expect(element.category).toBe('');
@@ -117,8 +121,11 @@ describe('ProverbsApp pagination preservation', () => {
     element.category = 'Nature';
 
     // Enter key
-    const enterEvent = { key: 'Enter', preventDefault: vi.fn() } as unknown as KeyboardEvent;
-    (element as any).handleSearchKeydown(enterEvent);
+    const enterEvent = {
+      key: 'Enter',
+      preventDefault: vi.fn(),
+    } as unknown as KeyboardEvent;
+    element['handleSearchKeydown'](enterEvent);
 
     expect(element.category).toBe('');
     const lastCallParams = vi.mocked(api.list).mock.calls.at(-1)?.[0];
@@ -126,8 +133,11 @@ describe('ProverbsApp pagination preservation', () => {
     expect(lastCallParams?.get('page')).toBe('1');
 
     // Escape key
-    const escEvent = { key: 'Escape', preventDefault: vi.fn() } as unknown as KeyboardEvent;
-    (element as any).handleSearchKeydown(escEvent);
+    const escEvent = {
+      key: 'Escape',
+      preventDefault: vi.fn(),
+    } as unknown as KeyboardEvent;
+    element['handleSearchKeydown'](escEvent);
     expect(element.query).toBe('');
   });
 
@@ -137,21 +147,21 @@ describe('ProverbsApp pagination preservation', () => {
     element.query = 'peace';
 
     // Setting author should clear category, tag, query
-    (element as any).setFilter('author', 'Sam Harris');
+    element['setFilter']('author', 'Sam Harris');
     expect(element.author).toBe('Sam Harris');
     expect(element.category).toBe('');
     expect(element.tag).toBe('');
     expect(element.query).toBe('');
 
     // Setting category/theme should clear author, tag, query
-    (element as any).setFilter('category', 'Mindfulness');
+    element['setFilter']('category', 'Mindfulness');
     expect(element.category).toBe('Mindfulness');
     expect(element.author).toBe('');
     expect(element.tag).toBe('');
     expect(element.query).toBe('');
 
     // Setting tag should clear category, author, query
-    (element as any).setTag('zen');
+    element['setTag']('zen');
     expect(element.tag).toBe('zen');
     expect(element.category).toBe('');
     expect(element.author).toBe('');
@@ -160,14 +170,14 @@ describe('ProverbsApp pagination preservation', () => {
 
   it('reflects the current filtering state in listHeading', () => {
     // Unfiltered
-    expect((element as any).listHeading).toEqual({
+    expect(element['listHeading']).toEqual({
       title: 'All sayings',
       subtitle: 'All sayings in library',
     });
 
     // Author filtered
     element.author = 'Sam Harris';
-    expect((element as any).listHeading).toEqual({
+    expect(element['listHeading']).toEqual({
       title: 'Sayings by Sam Harris',
       subtitle: 'Sayings attributed to Sam Harris',
     });
@@ -175,7 +185,7 @@ describe('ProverbsApp pagination preservation', () => {
 
     // Theme filtered
     element.category = 'Wisdom';
-    expect((element as any).listHeading).toEqual({
+    expect(element['listHeading']).toEqual({
       title: 'Sayings on Wisdom',
       subtitle: 'Explored under the Wisdom theme',
     });
@@ -183,7 +193,7 @@ describe('ProverbsApp pagination preservation', () => {
 
     // Tag filtered
     element.tag = 'stoic';
-    expect((element as any).listHeading).toEqual({
+    expect(element['listHeading']).toEqual({
       title: 'Sayings tagged #stoic',
       subtitle: 'Filtered by #stoic',
     });
@@ -191,7 +201,7 @@ describe('ProverbsApp pagination preservation', () => {
 
     // Search query filtered
     element.query = 'tranquility';
-    expect((element as any).listHeading).toEqual({
+    expect(element['listHeading']).toEqual({
       title: 'Sayings matching “tranquility”',
       subtitle: 'Search results for “tranquility”',
     });
@@ -199,14 +209,14 @@ describe('ProverbsApp pagination preservation', () => {
 
     // Favorites unfiltered
     element.showFavorites = true;
-    expect((element as any).listHeading).toEqual({
+    expect(element['listHeading']).toEqual({
       title: 'Favorites',
       subtitle: 'Saved sayings',
     });
 
     // Favorites with author
     element.author = 'Marcus Aurelius';
-    expect((element as any).listHeading).toEqual({
+    expect(element['listHeading']).toEqual({
       title: 'Favorite sayings by Marcus Aurelius',
       subtitle: 'Saved sayings attributed to Marcus Aurelius',
     });
@@ -217,18 +227,22 @@ describe('ProverbsApp pagination preservation', () => {
     await element.updateComplete;
 
     expect(element.showingConfig).toBe(false);
-    const navIcon = element.shadowRoot?.querySelector('.side-links button i.ph-gear');
+    const navIcon = element.shadowRoot?.querySelector(
+      '.side-links button i.ph-gear',
+    );
     expect(navIcon).not.toBeNull();
 
-    (element as any).showConfig();
+    element['showConfig']();
     await element.updateComplete;
 
     expect(element.showingConfig).toBe(true);
     expect(element.editing).toBe(false);
-    const pageIcon = element.shadowRoot?.querySelector('.config-header h1 i.ph-gear');
+    const pageIcon = element.shadowRoot?.querySelector(
+      '.config-header h1 i.ph-gear',
+    );
     expect(pageIcon).not.toBeNull();
 
-    (element as any).showView(false);
+    element['showView'](false);
     await element.updateComplete;
 
     expect(element.showingConfig).toBe(false);
@@ -251,7 +265,9 @@ describe('ProverbsApp pagination preservation', () => {
       },
       data: { proverbs: [] },
     };
-    vi.spyOn(api, 'exportTakeout').mockResolvedValue(mockTakeout as any);
+    vi.spyOn(api, 'exportTakeout').mockResolvedValue(
+      mockTakeout as Awaited<ReturnType<typeof api.exportTakeout>>,
+    );
 
     const origCreateObjectURL = URL.createObjectURL;
     const origRevokeObjectURL = URL.revokeObjectURL;
@@ -259,9 +275,11 @@ describe('ProverbsApp pagination preservation', () => {
     URL.revokeObjectURL = vi.fn();
 
     try {
-      await (element as any).exportData();
+      await element['exportData']();
       expect(api.exportTakeout).toHaveBeenCalled();
-      expect(element.exportSuccess).toContain('Successfully exported 12 sayings');
+      expect(element.exportSuccess).toContain(
+        'Successfully exported 12 sayings',
+      );
       expect(URL.createObjectURL).toHaveBeenCalled();
       expect(URL.revokeObjectURL).toHaveBeenCalled();
     } finally {

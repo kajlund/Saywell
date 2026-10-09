@@ -1,7 +1,12 @@
 import mongoose, { type FilterQuery } from 'mongoose';
 import { DomainError } from '../errors/domain-error.js';
 import { ProverbModel, type ProverbDocument } from '../models/proverb-model.js';
-import type { CreateProverb, Pagination, TakeoutExport, UpdateProverb } from '@proverbs/contracts';
+import type {
+  CreateProverb,
+  Pagination,
+  TakeoutExport,
+  UpdateProverb,
+} from '@proverbs/contracts';
 
 export class ProverbService {
   async createProverb(input: CreateProverb) {
@@ -12,7 +17,7 @@ export class ProverbService {
     return proverb.toObject();
   }
 
-  async getProverbs(query: Record<string, any> = {}) {
+  async getProverbs(query: Record<string, unknown> = {}) {
     const page = Math.max(1, Number(query.page ?? 1));
     const limit = Math.max(1, Number(query.limit ?? 10));
     const skip = (page - 1) * limit;
@@ -25,7 +30,10 @@ export class ProverbService {
     if (query.tag) {
       const cleanTag = String(query.tag).trim().toLowerCase();
       filters.tags = {
-        $in: [cleanTag, new RegExp(`(^|[\\s,.;/])${escapeRegex(cleanTag)}([\\s,.;/]|$)`, 'i')],
+        $in: [
+          cleanTag,
+          new RegExp(`(^|[\\s,.;/])${escapeRegex(cleanTag)}([\\s,.;/]|$)`, 'i'),
+        ],
       };
     }
     if (query.favorite !== undefined) filters.favorite = query.favorite;
@@ -44,7 +52,7 @@ export class ProverbService {
 
     const total = await ProverbModel.countDocuments(filters);
     const proverbs = await ProverbModel.find(filters)
-      .sort(query.sort ?? '-createdAt')
+      .sort(typeof query.sort === 'string' ? query.sort : '-createdAt')
       .skip(skip)
       .limit(limit)
       .lean();
@@ -61,7 +69,8 @@ export class ProverbService {
 
   async searchProverbs(query: { q: string; page?: number; limit?: number }) {
     const q = String(query.q).trim();
-    if (!q) throw new DomainError('INVALID_QUERY', 'Search query is required', 400);
+    if (!q)
+      throw new DomainError('INVALID_QUERY', 'Search query is required', 400);
 
     const page = Math.max(1, Number(query.page ?? 1));
     const limit = Math.max(1, Number(query.limit ?? 10));
@@ -96,20 +105,28 @@ export class ProverbService {
     };
   }
 
-  async getRandomProverb(filters: Record<string, any> = {}) {
+  async getRandomProverb(filters: Record<string, unknown> = {}) {
     const query: FilterQuery<ProverbDocument> = {};
     if (filters.category) query.category = filters.category;
     if (filters.lang) query.lang = filters.lang;
 
     const total = await ProverbModel.countDocuments(query);
     if (total === 0) {
-      throw new DomainError('NOT_FOUND', 'No proverb found matching the provided filters', 404);
+      throw new DomainError(
+        'NOT_FOUND',
+        'No proverb found matching the provided filters',
+        404,
+      );
     }
 
     const randomIndex = Math.floor(Math.random() * total);
     const proverb = await ProverbModel.findOne(query).skip(randomIndex).lean();
     if (!proverb) {
-      throw new DomainError('NOT_FOUND', 'No proverb found matching the provided filters', 404);
+      throw new DomainError(
+        'NOT_FOUND',
+        'No proverb found matching the provided filters',
+        404,
+      );
     }
     return proverb;
   }
@@ -125,7 +142,9 @@ export class ProverbService {
 
   async updateProverb(id: string, patch: UpdateProverb) {
     validateObjectId(id);
-    const normalizedPatch = patch.tags ? { ...patch, tags: normalizeTags(patch.tags) } : patch;
+    const normalizedPatch = patch.tags
+      ? { ...patch, tags: normalizeTags(patch.tags) }
+      : patch;
     const proverb = await ProverbModel.findByIdAndUpdate(id, normalizedPatch, {
       new: true,
       runValidators: true,
@@ -205,7 +224,6 @@ export class ProverbService {
     };
   }
 }
-
 
 function normalizeTags(tags?: string[]): string[] {
   if (!tags) return [];

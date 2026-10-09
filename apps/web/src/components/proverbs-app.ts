@@ -1,5 +1,10 @@
 import { LitElement, css, html, nothing } from 'lit';
-import type { CreateProverb, FilterOptions, Pagination, Proverb } from '@proverbs/contracts';
+import type {
+  CreateProverb,
+  FilterOptions,
+  Pagination,
+  Proverb,
+} from '@proverbs/contracts';
 import { api } from '../services/api-client.js';
 
 export const PREDEFINED_THEMES = [
@@ -125,7 +130,11 @@ export class ProverbsApp extends LitElement {
     return item._id ?? `${item.author}:${item.content}`;
   }
   private async loadFavoriteTotal() {
-    const params = new URLSearchParams({ favorite: 'true', page: '1', limit: '1' });
+    const params = new URLSearchParams({
+      favorite: 'true',
+      page: '1',
+      limit: '1',
+    });
     try {
       this.favoriteTotal = (await api.list(params)).pagination.total;
     } catch {
@@ -135,16 +144,22 @@ export class ProverbsApp extends LitElement {
   private async toggleFavorite(item: Proverb) {
     if (!item._id) return;
     const favorite = !item.favorite;
-    this.proverbs = this.proverbs.map((value) => (value === item ? { ...value, favorite } : value));
+    this.proverbs = this.proverbs.map((value) =>
+      value === item ? { ...value, favorite } : value,
+    );
     this.favoriteTotal = Math.max(0, this.favoriteTotal + (favorite ? 1 : -1));
     try {
       await api.update(item._id, { favorite });
-      if (this.showFavorites && !favorite) await this.load(this.pagination?.page || 1);
+      if (this.showFavorites && !favorite)
+        await this.load(this.pagination?.page || 1);
     } catch (error) {
       this.proverbs = this.proverbs.map((value) =>
         value._id === item._id ? { ...value, favorite: !favorite } : value,
       );
-      this.favoriteTotal = Math.max(0, this.favoriteTotal + (favorite ? -1 : 1));
+      this.favoriteTotal = Math.max(
+        0,
+        this.favoriteTotal + (favorite ? -1 : 1),
+      );
       this.fail(error);
     }
   }
@@ -294,7 +309,11 @@ export class ProverbsApp extends LitElement {
       if (this.selected?._id) await api.update(this.selected._id, value);
       else await api.create(value);
       this.closeForm();
-      await Promise.all([this.load(targetPage), this.loadFilters(), this.loadRandom()]);
+      await Promise.all([
+        this.load(targetPage),
+        this.loadFilters(),
+        this.loadRandom(),
+      ]);
     } catch (error) {
       this.fail(error);
     }
@@ -304,7 +323,11 @@ export class ProverbsApp extends LitElement {
     try {
       await api.delete(item._id);
       const targetPage = this.pagination?.page || 1;
-      await Promise.all([this.load(targetPage), this.loadFilters(), this.loadFavoriteTotal()]);
+      await Promise.all([
+        this.load(targetPage),
+        this.loadFilters(),
+        this.loadFavoriteTotal(),
+      ]);
     } catch (error) {
       this.fail(error);
     }
@@ -418,7 +441,10 @@ export class ProverbsApp extends LitElement {
     };
   }
 
-  private setFilter(key: 'author' | 'category' | 'lang' | 'tag', value: string) {
+  private setFilter(
+    key: 'author' | 'category' | 'lang' | 'tag',
+    value: string,
+  ) {
     if (value) {
       this.query = '';
       this.author = '';
@@ -434,7 +460,10 @@ export class ProverbsApp extends LitElement {
 
   private get availableThemes(): string[] {
     return Array.from(
-      new Set([...PREDEFINED_THEMES, ...this.filterOptions.categories.filter(Boolean)]),
+      new Set([
+        ...PREDEFINED_THEMES,
+        ...this.filterOptions.categories.filter(Boolean),
+      ]),
     ).sort((a, b) => a.localeCompare(b));
   }
 
@@ -469,7 +498,8 @@ export class ProverbsApp extends LitElement {
             void this.load();
           }}
         >
-          <img class="well-mark" src="/assets/saywell-mark.png" alt="" /><strong>Saywell</strong
+          <img class="well-mark" src="/assets/saywell-mark.png" alt="" /><strong
+            >Saywell</strong
           ><small>A WELL OF ENDURING WORDS</small>
         </button>
         <div class="side-links">
@@ -485,12 +515,19 @@ export class ProverbsApp extends LitElement {
             <i class="ph ph-heart"></i>Favorites
             <span class="nav-count">${this.favoriteTotal}</span>
           </button>
-          <button @click=${() => this.edit()}><i class="ph ph-plus-circle"></i>Add saying</button>
-          <button class=${this.showingConfig ? 'selected' : ''} @click=${() => this.showConfig()}>
+          <button @click=${() => this.edit()}>
+            <i class="ph ph-plus-circle"></i>Add saying
+          </button>
+          <button
+            class=${this.showingConfig ? 'selected' : ''}
+            @click=${() => this.showConfig()}
+          >
             <i class="ph ph-gear"></i>Configuration
           </button>
         </div>
-        <blockquote>“Words are little wells of thought.”<span>— John Ruskin</span></blockquote>
+        <blockquote>
+          “Words are little wells of thought.”<span>— John Ruskin</span>
+        </blockquote>
       </aside>
       <main class="reading-room">
         ${this.error ? html`<aside role="alert">${this.error}</aside>` : nothing}
@@ -499,7 +536,10 @@ export class ProverbsApp extends LitElement {
       ${this.editing || this.showingConfig ? nothing : this.tagsRail()}
       ${
         this.detailItem
-          ? html`<div class="detail-backdrop" @click=${() => (this.detailItem = null)}>
+          ? html`<div
+              class="detail-backdrop"
+              @click=${() => (this.detailItem = null)}
+            >
               <section
                 class="detail-dialog"
                 role="dialog"
@@ -515,13 +555,19 @@ export class ProverbsApp extends LitElement {
                 </button>
                 <div class="detail-meta">
                   <span class="detail-cat">${this.detailItem.category}</span>
-                  <span class="detail-lang">${this.detailItem.lang.toUpperCase()}</span>
+                  <span class="detail-lang"
+                    >${this.detailItem.lang.toUpperCase()}</span
+                  >
                 </div>
-                <blockquote class="detail-quote">“${this.detailItem.content}”</blockquote>
+                <blockquote class="detail-quote">
+                  “${this.detailItem.content}”
+                </blockquote>
                 <p class="detail-author">— ${this.detailItem.author}</p>
                 ${
                   this.detailItem.description
-                    ? html`<p class="detail-desc">${this.detailItem.description}</p>`
+                    ? html`<p class="detail-desc">
+                        ${this.detailItem.description}
+                      </p>`
                     : nothing
                 }
                 <div class="detail-tags">
@@ -549,8 +595,8 @@ export class ProverbsApp extends LitElement {
               <div>
                 <h2>Data Takeout</h2>
                 <p>
-                  Export all sayings, metadata, favorites, authors, and categories to a single JSON
-                  archive.
+                  Export all sayings, metadata, favorites, authors, and
+                  categories to a single JSON archive.
                 </p>
               </div>
             </div>
@@ -559,7 +605,9 @@ export class ProverbsApp extends LitElement {
               ?disabled=${this.exporting}
               @click=${() => void this.exportData()}
             >
-              <i class=${this.exporting ? 'ph ph-spinner ph-spin' : 'ph ph-download-simple'}></i>
+              <i
+                class=${this.exporting ? 'ph ph-spinner ph-spin' : 'ph ph-download-simple'}
+              ></i>
               ${this.exporting ? 'Preparing export…' : 'Export all data (JSON)'}
             </button>
           </div>
@@ -575,11 +623,15 @@ export class ProverbsApp extends LitElement {
             </div>
             <div class="stat-pill">
               <span class="stat-label">Categories</span>
-              <strong class="stat-value">${this.filterOptions.categories.length}</strong>
+              <strong class="stat-value"
+                >${this.filterOptions.categories.length}</strong
+              >
             </div>
             <div class="stat-pill">
               <span class="stat-label">Tags</span>
-              <strong class="stat-value">${this.filterOptions.tags.length}</strong>
+              <strong class="stat-value"
+                >${this.filterOptions.tags.length}</strong
+              >
             </div>
             <div class="stat-pill">
               <span class="stat-label">Archive Format</span>
@@ -602,9 +654,10 @@ export class ProverbsApp extends LitElement {
               <strong>Full Database Restore Ready</strong>
             </div>
             <p>
-              This takeout file preserves complete document structure including primary IDs
-              (<code>_id</code>), user references (<code>userId</code>), original timestamps,
-              categories, and tags. It is structured so that a complete database restore or import
+              This takeout file preserves complete document structure including
+              primary IDs (<code>_id</code>), user references
+              (<code>userId</code>), original timestamps, categories, and tags.
+              It is structured so that a complete database restore or import
               operation can be performed at any time.
             </p>
           </div>
@@ -641,7 +694,9 @@ export class ProverbsApp extends LitElement {
               : nothing
           }
         </div>
-        <button @click=${() => this.edit()}><i class="ph ph-plus"></i>New saying</button>
+        <button @click=${() => this.edit()}>
+          <i class="ph ph-plus"></i>New saying
+        </button>
       </header>
       <section class="paper-feature">
         <span class="feature-quote">“</span>${
@@ -664,16 +719,25 @@ export class ProverbsApp extends LitElement {
         ${this.select('author', 'All authors', this.filterOptions.authors)}
         ${
           this.tag
-            ? html`<span class="active-tag-chip" title="Filter active: #${this.tag}">
+            ? html`<span
+                class="active-tag-chip"
+                title="Filter active: #${this.tag}"
+              >
                 <i class="ph ph-tag"></i>#${this.tag}
-                <button type="button" aria-label="Clear tag filter" @click=${() => this.setTag('')}>
+                <button
+                  type="button"
+                  aria-label="Clear tag filter"
+                  @click=${() => this.setTag('')}
+                >
                   <i class="ph ph-x"></i>
                 </button>
               </span>`
             : nothing
         }
         <button><i class="ph ph-sliders-horizontal"></i>Filter</button>
-        <button type="button" class="secondary" @click=${() => this.reset()}>Reset</button>
+        <button type="button" class="secondary" @click=${() => this.reset()}>
+          Reset
+        </button>
       </form>
       ${
         this.loading
@@ -698,7 +762,11 @@ export class ProverbsApp extends LitElement {
                           <i
                             class=${item.favorite ? 'ph-fill ph-heart' : 'ph ph-heart'}
                           ></i></button
-                        ><button aria-label="Edit" title="Edit" @click=${() => this.edit(item)}>
+                        ><button
+                          aria-label="Edit"
+                          title="Edit"
+                          @click=${() => this.edit(item)}
+                        >
                           <i class="ph ph-pencil-simple"></i>
                         </button>
                         <div class="more-wrap">
@@ -721,7 +789,9 @@ export class ProverbsApp extends LitElement {
                                   >
                                     <i class="ph ph-eye"></i>View details
                                   </button>
-                                  <button @click=${() => void this.copyItem(item)}>
+                                  <button
+                                    @click=${() => void this.copyItem(item)}
+                                  >
                                     <i class="ph ph-copy"></i>Copy saying
                                   </button>
                                   <button
@@ -777,7 +847,12 @@ export class ProverbsApp extends LitElement {
         <h2>TAGS</h2>
         ${
           this.tag
-            ? html`<button class="clear-tag-btn" @click=${() => this.setTag('')}>Clear</button>`
+            ? html`<button
+                class="clear-tag-btn"
+                @click=${() => this.setTag('')}
+              >
+                Clear
+              </button>`
             : nothing
         }
       </div>
@@ -798,7 +873,8 @@ export class ProverbsApp extends LitElement {
               )}
             </div>`
           : html`<p class="tags-empty">
-              No tags found in the library yet. Add tags when creating or editing sayings.
+              No tags found in the library yet. Add tags when creating or
+              editing sayings.
             </p>`
       }
       <div class="tag-card">
@@ -852,7 +928,9 @@ export class ProverbsApp extends LitElement {
         />
         ${this.select('author', 'All authors', this.filterOptions.authors)}${this.select('category', 'All categories', this.filterOptions.categories)}${this.select('lang', 'All languages', this.filterOptions.languages)}${this.select('tag', 'All tags', this.filterOptions.tags)}
         <button>Apply</button
-        ><button type="button" class="secondary" @click=${this.reset}>Reset</button>
+        ><button type="button" class="secondary" @click=${this.reset}>
+          Reset
+        </button>
       </form>
       <div class="heading">
         <div>
@@ -874,10 +952,16 @@ export class ProverbsApp extends LitElement {
                       <blockquote>“${p.content}”</blockquote>
                       <p class="author">— ${p.author}</p>
                       ${p.description ? html`<p>${p.description}</p>` : nothing}
-                      <div class="tags">${p.tags.map((t) => html`<span>#${t}</span>`)}</div>
+                      <div class="tags">
+                        ${p.tags.map((t) => html`<span>#${t}</span>`)}
+                      </div>
                       <footer>
-                        <button class="secondary" @click=${() => this.edit(p)}>Edit</button
-                        ><button class="danger" @click=${() => void this.removeItem(p)}>
+                        <button class="secondary" @click=${() => this.edit(p)}>
+                          Edit</button
+                        ><button
+                          class="danger"
+                          @click=${() => void this.removeItem(p)}
+                        >
                           Delete
                         </button>
                       </footer>
@@ -906,7 +990,11 @@ export class ProverbsApp extends LitElement {
       this[key] = (event.target as HTMLInputElement).value;
     };
   }
-  private select(key: 'author' | 'category' | 'lang' | 'tag', label: string, options: string[]) {
+  private select(
+    key: 'author' | 'category' | 'lang' | 'tag',
+    label: string,
+    options: string[],
+  ) {
     return html`<select
       aria-label=${label}
       .value=${this[key]}
@@ -940,10 +1028,15 @@ export class ProverbsApp extends LitElement {
             .value=${this.draft.category}
             @change=${(e: Event) => this.field('category', (e.target as HTMLSelectElement).value)}
           >
-            <option value="" disabled ?selected=${!this.draft.category}>Select a theme</option>
+            <option value="" disabled ?selected=${!this.draft.category}>
+              Select a theme
+            </option>
             ${this.availableThemes.map(
               (theme) =>
-                html`<option value=${theme} ?selected=${this.draft.category === theme}>
+                html`<option
+                  value=${theme}
+                  ?selected=${this.draft.category === theme}
+                >
                   ${theme}
                 </option>`,
             )}
@@ -961,12 +1054,21 @@ export class ProverbsApp extends LitElement {
       </div>
       ${this.input('tags', 'Tags (comma-separated)')}
       <footer>
-        <button type="button" class="secondary" @click=${() => this.closeForm()}>Cancel</button
+        <button
+          type="button"
+          class="secondary"
+          @click=${() => this.closeForm()}
+        >
+          Cancel</button
         ><button>Save proverb</button>
       </footer>
     </form>`;
   }
-  private input(key: 'title' | 'author' | 'category' | 'tags', label: string, required = false) {
+  private input(
+    key: 'title' | 'author' | 'category' | 'tags',
+    label: string,
+    required = false,
+  ) {
     return html`<label
       >${label}<input
         ?required=${required}
@@ -975,7 +1077,11 @@ export class ProverbsApp extends LitElement {
         @input=${(e: Event) => this.field(key, (e.target as HTMLInputElement).value)}
     /></label>`;
   }
-  private area(key: 'content' | 'description', label: string, required = false) {
+  private area(
+    key: 'content' | 'description',
+    label: string,
+    required = false,
+  ) {
     return html`<label
       >${label}<textarea
         ?required=${required}
@@ -1343,7 +1449,8 @@ export class ProverbsApp extends LitElement {
       min-height: 300px;
       padding: 46px 54px;
       color: #f8f4e9;
-      background: #113c2f url('/assets/saywell-botanical-book.png') no-repeat 96% 50% / 42% auto;
+      background: #113c2f url('/assets/saywell-botanical-book.png') no-repeat
+        96% 50% / 42% auto;
       border: 0;
       border-radius: 2px;
       box-shadow: 0 16px 38px rgba(29, 47, 39, 0.12);

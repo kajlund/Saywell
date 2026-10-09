@@ -19,7 +19,9 @@ describe('API client', () => {
       ),
     );
 
-    await expect(api.list(new URLSearchParams({ page: '2' }))).resolves.toMatchObject({
+    await expect(
+      api.list(new URLSearchParams({ page: '2' })),
+    ).resolves.toMatchObject({
       data: [],
       pagination: { page: 2, pages: 3 },
     });
@@ -32,7 +34,10 @@ describe('API client', () => {
         new Response(
           JSON.stringify({
             success: false,
-            error: { code: 'VALIDATION_ERROR', message: 'Request validation failed' },
+            error: {
+              code: 'VALIDATION_ERROR',
+              message: 'Request validation failed',
+            },
           }),
           { status: 400, headers: { 'content-type': 'application/json' } },
         ),

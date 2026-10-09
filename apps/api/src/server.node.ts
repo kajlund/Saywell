@@ -16,7 +16,11 @@ const logger = pino({
     ? {
         transport: {
           target: 'pino-pretty',
-          options: { colorize: true, translateTime: 'SYS:standard', ignore: 'pid,hostname' },
+          options: {
+            colorize: true,
+            translateTime: 'SYS:standard',
+            ignore: 'pid,hostname',
+          },
         },
       }
     : {}),
@@ -33,8 +37,15 @@ try {
 }
 
 const server = serve(
-  { fetch: createApp(proverbService, logger, env.WEB_ORIGIN).fetch, port: env.PORT },
-  () => logger.info({ port: env.PORT, environment: env.NODE_ENV }, 'Proverbs API listening'),
+  {
+    fetch: createApp(proverbService, logger, env.WEB_ORIGIN).fetch,
+    port: env.PORT,
+  },
+  () =>
+    logger.info(
+      { port: env.PORT, environment: env.NODE_ENV },
+      'Proverbs API listening',
+    ),
 );
 
 async function shutdown(signal: string) {

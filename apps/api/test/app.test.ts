@@ -1,3 +1,4 @@
+import type { ProverbService } from '../src/services/proverb-service.js';
 import pino from 'pino';
 import { describe, expect, it, vi } from 'vitest';
 import { createApp } from '../src/app.ts';
@@ -5,7 +6,12 @@ import { createApp } from '../src/app.ts';
 const logger = pino({ enabled: false });
 
 const app = (overrides: Record<string, unknown> = {}) =>
-  createApp(service(overrides) as any, logger, undefined, false);
+  createApp(
+    service(overrides) as unknown as ProverbService,
+    logger,
+    undefined,
+    false,
+  );
 
 function service(overrides: Record<string, unknown> = {}) {
   return {
@@ -39,8 +45,7 @@ function service(overrides: Record<string, unknown> = {}) {
       data: { proverbs: [] },
     }),
     ...overrides,
-  } as any;
-
+  } as unknown as ProverbService;
 }
 
 describe('Proverbs API', () => {
@@ -53,7 +58,11 @@ describe('Proverbs API', () => {
   it('lists proverbs with pagination metadata', async () => {
     const response = await app().request('/api/proverbs');
     expect(response.status).toBe(200);
-    expect(await response.json()).toMatchObject({ success: true, data: [], meta: { count: 0 } });
+    expect(await response.json()).toMatchObject({
+      success: true,
+      data: [],
+      meta: { count: 0 },
+    });
   });
 
   it('passes the favorite filter to the service', async () => {
@@ -61,9 +70,13 @@ describe('Proverbs API', () => {
       proverbs: [],
       pagination: { total: 0, page: 1, pages: 1 },
     });
-    const response = await app({ getProverbs }).request('/api/proverbs?favorite=true');
+    const response = await app({ getProverbs }).request(
+      '/api/proverbs?favorite=true',
+    );
     expect(response.status).toBe(200);
-    expect(getProverbs).toHaveBeenCalledWith(expect.objectContaining({ favorite: true }));
+    expect(getProverbs).toHaveBeenCalledWith(
+      expect.objectContaining({ favorite: true }),
+    );
   });
 
   it('rejects invalid create payloads', async () => {
@@ -82,7 +95,9 @@ describe('Proverbs API', () => {
   it('rejects malformed ids', async () => {
     const response = await app().request('/api/proverbs/nope');
     expect(response.status).toBe(400);
-    expect(await response.json()).toMatchObject({ error: { code: 'INVALID_ID' } });
+    expect(await response.json()).toMatchObject({
+      error: { code: 'INVALID_ID' },
+    });
   });
 
   it('provides options used by client filters', async () => {
@@ -97,7 +112,9 @@ describe('Proverbs API', () => {
   it('validates random proverb filters', async () => {
     const response = await app().request('/api/random?lang=unknown');
     expect(response.status).toBe(400);
-    expect(await response.json()).toMatchObject({ error: { code: 'VALIDATION_ERROR' } });
+    expect(await response.json()).toMatchObject({
+      error: { code: 'VALIDATION_ERROR' },
+    });
   });
 
   it('exports system data takeout with attachment headers', async () => {
@@ -147,4 +164,3 @@ describe('Proverbs API', () => {
     expect(exportTakeout).toHaveBeenCalled();
   });
 });
-

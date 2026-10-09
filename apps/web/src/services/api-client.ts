@@ -9,25 +9,36 @@ import type {
   UpdateProverb,
 } from '@proverbs/contracts';
 
-
 type ListResult = { data: Proverb[]; pagination: Pagination };
 
-async function responseBody<T>(response: Response): Promise<ApiSuccess<T> | ApiError> {
+async function responseBody<T>(
+  response: Response,
+): Promise<ApiSuccess<T> | ApiError> {
   try {
     return (await response.json()) as ApiSuccess<T> | ApiError;
   } catch {
-    throw new Error(`The server returned an invalid response (${response.status})`);
+    throw new Error(
+      `The server returned an invalid response (${response.status})`,
+    );
   }
 }
 
-async function request<T>(path: string, init?: RequestInit): Promise<ApiSuccess<T>> {
+async function request<T>(
+  path: string,
+  init?: RequestInit,
+): Promise<ApiSuccess<T>> {
   const response = await fetch(path, {
     ...init,
-    headers: { ...(init?.body ? { 'content-type': 'application/json' } : {}), ...init?.headers },
+    headers: {
+      ...(init?.body ? { 'content-type': 'application/json' } : {}),
+      ...init?.headers,
+    },
   });
   const body = await responseBody<T>(response);
   if (!response.ok || !body.success) {
-    throw new Error(body.success ? `Request failed (${response.status})` : body.error.message);
+    throw new Error(
+      body.success ? `Request failed (${response.status})` : body.error.message,
+    );
   }
   return body;
 }
@@ -54,9 +65,15 @@ export const api = {
     }
     return body.proverb;
   },
-  filters: async () => (await request<FilterOptions>('/api/proverbs/filters')).data,
+  filters: async () =>
+    (await request<FilterOptions>('/api/proverbs/filters')).data,
   create: async (value: CreateProverb) =>
-    (await request<Proverb>('/api/proverbs', { method: 'POST', body: JSON.stringify(value) })).data,
+    (
+      await request<Proverb>('/api/proverbs', {
+        method: 'POST',
+        body: JSON.stringify(value),
+      })
+    ).data,
   update: async (id: string, value: UpdateProverb) =>
     (
       await request<Proverb>(`/api/proverbs/${id}`, {
@@ -66,6 +83,6 @@ export const api = {
     ).data,
   delete: async (id: string) =>
     request<Record<string, never>>(`/api/proverbs/${id}`, { method: 'DELETE' }),
-  exportTakeout: async () => (await request<TakeoutExport>('/api/config/export')).data,
+  exportTakeout: async () =>
+    (await request<TakeoutExport>('/api/config/export')).data,
 };
-

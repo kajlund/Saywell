@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { Hono } from 'hono';
+import { Hono, type Context } from 'hono';
 import { cors } from 'hono/cors';
 import { serveStatic } from '@hono/node-server/serve-static';
 import { zValidator } from '@hono/zod-validator';
@@ -17,7 +17,10 @@ import { ProverbService } from './services/proverb-service.js';
 
 type Variables = { requestId: string };
 
-const validation = (result: { success: boolean; error?: unknown }, c: any) =>
+const validation = (
+  result: { success: boolean; error?: unknown },
+  c: Context,
+) =>
   result.success
     ? undefined
     : c.json(
@@ -60,13 +63,16 @@ export function createApp(
     );
   });
 
-  const id = (c: any) => {
+  const id = (c: Context<{ Variables: Variables }>) => {
     const parsed = objectIdSchema.safeParse(c.req.param('id'));
-    if (!parsed.success) throw new DomainError('INVALID_ID', 'Invalid ID format', 400);
+    if (!parsed.success)
+      throw new DomainError('INVALID_ID', 'Invalid ID format', 400);
     return parsed.data;
   };
 
-  app.get('/health', (c) => c.json({ status: 'OK', message: 'Saywell API is running' }));
+  app.get('/health', (c) =>
+    c.json({ status: 'OK', message: 'Saywell API is running' }),
+  );
 
   app.get(
     '/api/proverbs/search',
@@ -76,19 +82,27 @@ export function createApp(
       return c.json({
         success: true,
         data: result.proverbs,
-        meta: { query: result.query, count: result.proverbs.length, pagination: result.pagination },
+        meta: {
+          query: result.query,
+          count: result.proverbs.length,
+          pagination: result.pagination,
+        },
       });
     },
   );
 
-  app.get('/api/proverbs', zValidator('query', proverbListQuerySchema, validation), async (c) => {
-    const result = await service.getProverbs(c.req.valid('query'));
-    return c.json({
-      success: true,
-      data: result.proverbs,
-      meta: { count: result.proverbs.length, pagination: result.pagination },
-    });
-  });
+  app.get(
+    '/api/proverbs',
+    zValidator('query', proverbListQuerySchema, validation),
+    async (c) => {
+      const result = await service.getProverbs(c.req.valid('query'));
+      return c.json({
+        success: true,
+        data: result.proverbs,
+        meta: { count: result.proverbs.length, pagination: result.pagination },
+      });
+    },
+  );
 
   app.get('/api/proverbs/filters', async (c) =>
     c.json({ success: true, data: await service.getFilterOptions() }),
@@ -97,37 +111,67 @@ export function createApp(
   app.get('/api/config/export', async (c) => {
     const data = await service.exportTakeout();
     const date = new Date().toISOString().slice(0, 10);
-    c.header('content-disposition', `attachment; filename="saywell-takeout-${date}.json"`);
+    c.header(
+      'content-disposition',
+      `attachment; filename="saywell-takeout-${date}.json"`,
+    );
     return c.json({ success: true, data });
   });
 
-  app.get('/api/random', zValidator('query', randomProverbQuerySchema, validation), async (c) => {
-    const proverb = await service.getRandomProverb(c.req.valid('query'));
-    return c.json({ success: true, proverb });
-  });
+  app.get(
+    '/api/random',
+    zValidator('query', randomProverbQuerySchema, validation),
+    async (c) => {
+      const proverb = await service.getRandomProverb(c.req.valid('query'));
+      return c.json({ success: true, proverb });
+    },
+  );
 
-  app.post('/api/proverbs', zValidator('json', createProverbSchema, validation), async (c) =>
-    c.json({ success: true, data: await service.createProverb(c.req.valid('json')) }, 201),
+  app.post(
+    '/api/proverbs',
+    zValidator('json', createProverbSchema, validation),
+    async (c) =>
+      c.json(
+        {
+          success: true,
+          data: await service.createProverb(c.req.valid('json')),
+        },
+        201,
+      ),
   );
 
   app.get('/api/proverbs/:id', async (c) =>
     c.json({ success: true, data: await service.getProverbById(id(c)) }),
   );
 
-  app.put('/api/proverbs/:id', zValidator('json', updateProverbSchema, validation), async (c) =>
-    c.json({ success: true, data: await service.updateProverb(id(c), c.req.valid('json')) }),
+  app.put(
+    '/api/proverbs/:id',
+    zValidator('json', updateProverbSchema, validation),
+    async (c) =>
+      c.json({
+        success: true,
+        data: await service.updateProverb(id(c), c.req.valid('json')),
+      }),
   );
 
   app.delete('/api/proverbs/:id', async (c) => {
     await service.deleteProverb(id(c));
-    return c.json({ success: true, message: 'Proverb successfully deleted', data: {} });
+    return c.json({
+      success: true,
+      message: 'Proverb successfully deleted',
+      data: {},
+    });
   });
 
   app.all('/api/*', (c) =>
     c.json(
       {
         success: false,
-        error: { code: 'NOT_FOUND', message: 'Route not found', requestId: c.get('requestId') },
+        error: {
+          code: 'NOT_FOUND',
+          message: 'Route not found',
+          requestId: c.get('requestId'),
+        },
       },
       404,
     ),
@@ -144,7 +188,12 @@ export function createApp(
       return c.json(
         {
           success: false,
-          error: { code: error.code, message: error.message, details: error.details, requestId },
+          error: {
+            code: error.code,
+            message: error.message,
+            details: error.details,
+            requestId,
+          },
         },
         error.status,
       );
@@ -154,7 +203,11 @@ export function createApp(
     return c.json(
       {
         success: false,
-        error: { code: 'INTERNAL_ERROR', message: 'An unexpected error occurred', requestId },
+        error: {
+          code: 'INTERNAL_ERROR',
+          message: 'An unexpected error occurred',
+          requestId,
+        },
       },
       500,
     );

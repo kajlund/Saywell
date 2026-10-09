@@ -6,7 +6,6 @@ import {
   updateProverbSchema,
 } from '../src/index.js';
 
-
 const valid = {
   userId: '665544332211009988776655',
   title: 'A sound title',
@@ -30,16 +29,24 @@ describe('proverb contracts', () => {
   });
 
   it('coerces and limits pagination', () => {
-    expect(proverbListQuerySchema.parse({ page: '2', limit: '25' })).toMatchObject({
+    expect(
+      proverbListQuerySchema.parse({ page: '2', limit: '25' }),
+    ).toMatchObject({
       page: 2,
       limit: 25,
     });
-    expect(proverbListQuerySchema.safeParse({ limit: '101' }).success).toBe(false);
+    expect(proverbListQuerySchema.safeParse({ limit: '101' }).success).toBe(
+      false,
+    );
   });
 
   it('parses the persisted favorite filter', () => {
-    expect(proverbListQuerySchema.parse({ favorite: 'true' }).favorite).toBe(true);
-    expect(proverbListQuerySchema.parse({ favorite: 'false' }).favorite).toBe(false);
+    expect(proverbListQuerySchema.parse({ favorite: 'true' }).favorite).toBe(
+      true,
+    );
+    expect(proverbListQuerySchema.parse({ favorite: 'false' }).favorite).toBe(
+      false,
+    );
   });
 
   it('validates a takeout export payload', () => {
@@ -80,4 +87,3 @@ describe('proverb contracts', () => {
     });
   });
 });
-

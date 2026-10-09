@@ -1,4 +1,9 @@
-import mongoose, { type HydratedDocument, type Model, Schema, type Types } from 'mongoose';
+import mongoose, {
+  type HydratedDocument,
+  type Model,
+  Schema,
+  type Types,
+} from 'mongoose';
 
 export interface ProverbDocument {
   userId: Types.ObjectId;

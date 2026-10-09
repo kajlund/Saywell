@@ -1,6 +1,8 @@
 import { z } from 'zod';
 
-export const objectIdSchema = z.string().regex(/^[a-f\d]{24}$/i, 'Invalid ID format');
+export const objectIdSchema = z
+  .string()
+  .regex(/^[a-f\d]{24}$/i, 'Invalid ID format');
 
 const proverbFields = {
   _id: objectIdSchema.optional(),
@@ -58,7 +60,10 @@ export const randomProverbQuerySchema = z.object({
   lang: z.enum(['eng', 'swe', 'fin']).optional(),
 });
 
-export type Proverb = z.infer<typeof proverbSchema> & { createdAt?: string; updatedAt?: string };
+export type Proverb = z.infer<typeof proverbSchema> & {
+  createdAt?: string;
+  updatedAt?: string;
+};
 export type CreateProverb = z.infer<typeof createProverbSchema>;
 export type UpdateProverb = z.infer<typeof updateProverbSchema>;
 export type Pagination = { total: number; page: number; pages: number };
@@ -76,7 +81,12 @@ export type ApiSuccess<T> = {
 };
 export type ApiError = {
   success: false;
-  error: { code: string; message: string; requestId: string; details?: unknown };
+  error: {
+    code: string;
+    message: string;
+    requestId: string;
+    details?: unknown;
+  };
 };
 
 export const takeoutProverbSchema = proverbSchema.extend({
@@ -106,4 +116,3 @@ export const takeoutExportSchema = z.object({
 export type TakeoutStats = z.infer<typeof takeoutStatsSchema>;
 export type TakeoutProverb = z.infer<typeof takeoutProverbSchema>;
 export type TakeoutExport = z.infer<typeof takeoutExportSchema>;
-

@@ -59,3 +59,16 @@ The Lit client supports searching, filtering, pagination, random proverbs, and p
 editing, and deletion. Authentication from the legacy server-rendered admin is not part of the new
 REST flow yet, so deploy mutation routes only behind an appropriate trusted boundary until access
 control is added.
+
+## Linting and formatting
+
+All Dreamquest projects use the same ESLint and Prettier configuration, based on Activus. Run these commands from the repository root:
+
+```sh
+npm run lint
+npm run lint:fix
+npm run format
+npm run format:check
+```
+
+ESLint checks supported JavaScript and TypeScript files and treats warnings as failures. Prettier formats its supported source, configuration, and documentation files with single quotes, trailing commas, and LF line endings. Dependencies, generated builds and test output, local data, editor settings, archived artifacts, and dependency lockfiles are excluded. SQL and Nunjucks templates are outside the installed tools' supported file types.
