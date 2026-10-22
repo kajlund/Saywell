@@ -7,7 +7,7 @@
     "dev": "vite --configLoader runner",
     "build": "tsc --noEmit && vite build --configLoader runner",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run --passWithNoTests --configLoader runner"
+    "test": "vitest run --configLoader runner"
   },
   "dependencies": {
     "@phosphor-icons/web": "^2.1.2",
@@ -17,7 +17,7 @@
   "devDependencies": {
     "happy-dom": "^20.12.0",
     "typescript": "^5.9.2",
-    "vite": "^7.1.3",
-    "vitest": "^3.2.4"
+    "vite": "^8.3.5",
+    "vitest": "^5.0.5"
   }
 }

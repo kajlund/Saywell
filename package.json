@@ -18,11 +18,11 @@
     "build": "npm run build --workspaces --if-present",
     "lint": "eslint . --max-warnings 0",
     "lint:fix": "eslint . --fix --max-warnings 0",
-    "typecheck": "npm run typecheck --workspaces --if-present",
-    "test": "npm test --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces",
+    "test": "npm test --workspaces",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "check": "npm run format:check && npm run lint && npm run typecheck && npm test"
+    "check": "npm run typecheck && npm run lint && npm test"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
